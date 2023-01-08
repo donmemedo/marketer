@@ -1,7 +1,7 @@
 from fastapi import FastAPI
 from config import setting
 from database import get_database
-from models import SearchUser
+from schemas import SearchUser
 
 
 app = FastAPI(version=setting.VERSION)
@@ -60,15 +60,28 @@ def get_sub_users():
     }
 
 
-@app.get('/search_user')
-def search_marketer_user(user: SearchUser):
+@app.get('/search_user/{marketer_name}')
+def search_marketer_user(marketer_name: str, page_size: int = 1, page_index: int = 1):
+    db = get_database()
 
-    print(user.dic()) 
-    #db = get_database()
+    customer_coll = db['customers']
+    
+    docs = customer_coll.find({
+        'Referer': {
+            '$regex': marketer_name }}, {
+                "Username": 1,
+                "FirstName": 1,
+                "LastName": 1,
+                "PAMCode": 1,
+                "BankAccountNumber": 1}).skip(page_index).limit(page_size)
 
-    #customer_coll = db['customers']
+    # total_records =
+    response = [doc for doc in docs]
 
-    #print(user.username)
-    #docs = customer_coll.find({'Username': user.username})
+    cleaner(response)
 
-    return 2
+    # TODO: return total records
+    return {
+        "Results": response,
+        "TotalRecords": None
+    }
