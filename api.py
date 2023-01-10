@@ -108,7 +108,7 @@ async def search_marketer_user(
     }
 
     docs = customer_coll.find(query, fields).skip(page_index).limit(page_size)
-
+    total_records = customer_coll.count_documents(query)
     users = [doc for doc in docs]
 
     cleaner(users)
@@ -141,7 +141,7 @@ async def search_marketer_user(
         else:
             user["UserStatus"] = "Active"
 
-    return {"Results": users, "TotalRecords": None}
+    return {"Results": users, "TotalRecords": total_records}
 
 
 if __name__ == "__main__":
