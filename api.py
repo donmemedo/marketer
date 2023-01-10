@@ -4,23 +4,17 @@ from database import get_database
 from schemas import SearchUser
 from datetime import timedelta, date
 import uvicorn
+from tools import cleaner
 
 
 app = FastAPI(version=setting.VERSION)
-
-
-def cleaner(items: list):
-    for item in items:
-        if "_id" in item:
-            del item["_id"]
-
-    return items
 
 
 @app.get("/get_all_users_trades/{marketer_name}")
 async def get_all_users_trades(
     marketer_name: str, page_index: int = 1, page_size: int = 1
 ):
+
     db = get_database()
 
     # set collections
@@ -139,7 +133,7 @@ async def search_marketer_user(
         ).limit(1)
 
         # unfold the results
-        results = [d for d in trades_response]
+        results = [trade for trade in trades_response]
 
         # specify whether the user is active or not
         if not results:
@@ -152,3 +146,5 @@ async def search_marketer_user(
 
 if __name__ == "__main__":
     uvicorn.run(app=app, host="0.0.0.0", port=8000)
+
+    # TODO: use motor to async all database connections
