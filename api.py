@@ -3,14 +3,14 @@ from config import setting
 from database import get_database
 from schemas import SearchUser
 from datetime import timedelta, date
-import uvicorn
 from tools import cleaner
+import uvicorn
 
 
-app = FastAPI(version=setting.VERSION)
+app = FastAPI(version=setting.VERSION, title=setting.SWAGGER_TITLE)
 
 
-@app.get("/get_all_users_trades/{marketer_name}")
+@app.get("/get_all_users_trades/{marketer_name}", tags=["users"])
 async def get_all_users_trades(
     marketer_name: str, page_index: int = 1, page_size: int = 1
 ):
@@ -66,7 +66,7 @@ async def get_all_users_trades(
     return response_list
 
 
-@app.get("/get_user_total_trades/{trade_code}")
+@app.get("/get_user_total_trades/{trade_code}", tags=["trades"])
 async def get_user_total_trades(trade_code: str):
     db = get_database()
     trades_coll = db["trades"]
@@ -89,7 +89,7 @@ async def get_user_total_trades(trade_code: str):
     return records
 
 
-@app.get("/search_user/{marketer_name}")
+@app.get("/search_user/{marketer_name}", tags=["users"])
 async def search_marketer_user(
     marketer_name: str, page_size: int = 1, page_index: int = 1
 ):
@@ -144,7 +144,45 @@ async def search_marketer_user(
     return {"Results": users, "TotalRecords": total_records}
 
 
+@app.get("/user_profile/", tags=["users"])
+async def get_user_profile(first_name: str='', last_name: str='', marketer_name: str=''):
+    db = get_database()
+
+    customer_coll = db["customers"]
+
+    query = {"$and": [
+        {"Referer": {"$regex": marketer_name}},
+        {"FirstName": {"$regex": first_name}},
+        {"LastName": {"$regex": last_name }}
+        ]
+    }
+
+    fields = {
+        "Username": 1,
+        "PAMCode": 1
+    }
+    total_records = customer_coll.count_documents(query)
+
+    docs = customer_coll.find(query, fields).skip(0).limit(1)
+    response = [d for d in docs]
+
+    cleaner(response)
+
+    return response
+
+
+@app.get("/marketer/", tags=["marketers"])
+async def get_marketer_profile(name: str=''):
+    db = get_database()
+
+    marketers_coll = db["marketers"]
+    query = {"Referer": {"$regex": None}}
+
+    return None
+
+
 if __name__ == "__main__":
     uvicorn.run(app=app, host="0.0.0.0", port=8000)
 
     # TODO: use motor to async all database connections
+    # TODO: add response model to all APIs
