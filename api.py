@@ -1,4 +1,4 @@
-from fastapi import FastAPI
+from fastapi import FastAPI, HTTPException
 from config import setting
 from database import get_database
 from schemas import SearchUser
@@ -124,8 +124,6 @@ async def search_marketer_user(
     last_month = today - timedelta(days=30)
     temporary = last_month.strftime("%Y-%m-%d")
 
-    # TODO: add total records in the response
-
     # get user trade status
     for user in users:
         trades_response = trades_coll.find(
@@ -145,7 +143,7 @@ async def search_marketer_user(
 
 
 @app.get("/user_profile/", tags=["users"])
-async def get_user_profile(first_name: str='', last_name: str='', marketer_name: str=''):
+async def get_user_profile(first_name: str='', last_name: str='', marketer_name: str='', page_size: int=1, page_index: int=0):
     db = get_database()
 
     customer_coll = db["customers"]
@@ -161,14 +159,89 @@ async def get_user_profile(first_name: str='', last_name: str='', marketer_name:
         "Username": 1,
         "PAMCode": 1
     }
+
     total_records = customer_coll.count_documents(query)
 
-    docs = customer_coll.find(query, fields).skip(0).limit(1)
+    docs = customer_coll.find(query, fields).skip(page_index).limit(page_size)
     response = [d for d in docs]
 
     cleaner(response)
 
-    return response
+    return { "TotalRecords": total_records, "Response": response}
+
+
+@app.get("/get_user_fee", tags=["users"])
+async def get_user_fee(marketer_name, trade_code):
+    db = get_database()
+
+    customers_coll = db["customers"]
+    trades_coll = db["trades"]
+
+    # Check if customer exist
+    query = {"$and": [
+        {"Referer": {"$regex": marketer_name}},
+        {"PAMCode": trade_code}
+        ]
+    }
+
+    fields = {"PAMCode": 1}
+
+    customers_records = customers_coll.find(query, fields)
+    trade_codes = [c for c in customers_records]
+
+    if not trade_codes:
+        raise HTTPException(status_code=404, detail="Customer Not Found")
+    else:
+        pipeline = [
+            {"$match": {"TradeCode": trade_code}},
+            {
+                "$group": {
+                    "_id": "$id", 
+                    "TotalVolume": {
+                        "$sum": "$TradeItemBroker"
+                        }
+                    }
+                },
+            ]
+         
+        agg_result = trades_coll.aggregate(pipeline=pipeline)
+
+        return (cleaner([a for a in agg_result]))
+
+
+@app.get("/users_total_fee/{marketer_name}", tags=["users"])
+async def get_users_total_fee(marketer_name):
+    db = get_database()
+
+    customers_coll = db["customers"]
+    trades_coll = db["trades"]
+
+    # Check if customer exist
+    query = {"$and": [
+        {"Referer": {"$regex": marketer_name}}
+        ]
+    }
+
+    fields = {"PAMCode": 1}
+
+    customers_records = customers_coll.find(query, fields)
+    trade_codes = [c.get('PAMCode') for c in customers_records]
+
+    pipeline = [
+        {"$match": {"TradeCode": {"$in": trade_codes}}},
+        {
+            "$group": {
+                "_id": "$id", 
+                "TotalVolume": {
+                    "$sum": "$TradeItemBroker"
+                    }
+                }
+        }
+    ]
+
+    agg_result = trades_coll.aggregate(pipeline=pipeline)
+
+    return ([a for a in agg_result])
 
 
 @app.get("/marketer/", tags=["marketers"])
@@ -176,9 +249,10 @@ async def get_marketer_profile(name: str=''):
     db = get_database()
 
     marketers_coll = db["marketers"]
-    query = {"Referer": {"$regex": None}}
+    query = {"FirstName": {"$regex": name}}
 
-    return None
+    query_result = marketers_coll.find(query)
+    return cleaner([r for r in query_result])
 
 
 if __name__ == "__main__":
