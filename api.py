@@ -1,19 +1,17 @@
-from fastapi import FastAPI, HTTPException
-from config import setting
-from database import get_database
-from schemas import SearchUser
+from fastapi import FastAPI, HTTPException, Depends
 from datetime import timedelta, date
-from tools import cleaner
 import uvicorn
+from schemas import *
+from tools import remove_id, to_gregorian
+from database import get_database
+from config import setting
 
 
 app = FastAPI(version=setting.VERSION, title=setting.SWAGGER_TITLE)
 
 
-@app.get("/get_all_users_trades/{marketer_name}", tags=["users"])
-async def get_all_users_trades(
-    marketer_name: str, page_index: int = 1, page_size: int = 1
-):
+@app.get("/users_trades/", tags=["users"])
+async def get_users_trades(args: MarketerUsersIn = Depends(MarketerUsersIn)):
 
     db = get_database()
 
@@ -21,11 +19,14 @@ async def get_all_users_trades(
     customer_coll = db["customers"]
     trades_coll = db["trades"]
 
-    query = {"Referer": {"$regex": marketer_name}}
+    # transform date from Gregorian to Jalali calendar
+    gregorian_date = to_gregorian(args.from_date)
+
+    query = {"Referer": {"$regex": args.marketer_name}}
 
     fields = {"PAMCode": 1}
 
-    records = customer_coll.find(query, fields).skip(page_index).limit(page_size)
+    records = customer_coll.find(query, fields).skip(args.page_index).limit(args.page_size)
 
     trade_codes = []
 
@@ -36,7 +37,14 @@ async def get_all_users_trades(
 
     for trade_code in trade_codes:
         pipeline = [
-            {"$match": {"TradeCode": trade_code}},
+            {
+                "$match": {
+                    "$and": [
+                        {"TradeCode": trade_code}, 
+                        {"TradeDate": {"$gte": gregorian_date}}
+                        ]
+                    }
+                },
             {
                 "$project": {
                     "TradeCode": 1,
@@ -56,7 +64,7 @@ async def get_all_users_trades(
         aggregate = trades_coll.aggregate(pipeline=pipeline)
 
         records = [r for r in aggregate]
-        cleaner(records)
+        remove_id(records)
 
         if not records:
             response_list.append({"TradeCode": trade_code, "TotalVolume": 0})
@@ -66,13 +74,23 @@ async def get_all_users_trades(
     return response_list
 
 
-@app.get("/get_user_total_trades/{trade_code}", tags=["trades"])
-async def get_user_total_trades(trade_code: str):
+@app.get("/user_total_trades/", tags=["users"])
+async def get_user_total_trades(args: UserTotalTradesIn = Depends(UserTotalTradesIn)):
     db = get_database()
     trades_coll = db["trades"]
 
+    # transform date from Gregorian to Jalali calendar
+    gregorian_date = to_gregorian(args.from_date)
+
     pipeline = [
-        {"$match": {"TradeCode": trade_code}},
+        {
+            "$match": {
+                "$and": [
+                    {"TradeCode": args.trade_code},
+                    {"TradeDate": {"$gt": gregorian_date}}
+                    ]
+                }
+            },
         {
             "$project": {
                 "Price": 1,
@@ -85,19 +103,20 @@ async def get_user_total_trades(trade_code: str):
     aggregate = trades_coll.aggregate(pipeline=pipeline)
 
     records = [r for r in aggregate]
-    cleaner(records)
+
+    remove_id(records)
+
+
     return records
 
 
-@app.get("/search_user/{marketer_name}", tags=["users"])
-async def search_marketer_user(
-    marketer_name: str, page_size: int = 1, page_index: int = 1
-):
+@app.get("/search_user/", tags=["users"])
+async def search_marketer_user(args: SearchUserIn = Depends(SearchUserIn)):
     db = get_database()
 
     customer_coll = db["customers"]
 
-    query = {"Referer": {"$regex": marketer_name}}
+    query = {"Referer": {"$regex": args.marketer_name}}
 
     fields = {
         "Username": 1,
@@ -107,11 +126,11 @@ async def search_marketer_user(
         "BankAccountNumber": 1,
     }
 
-    docs = customer_coll.find(query, fields).skip(page_index).limit(page_size)
+    docs = customer_coll.find(query, fields).skip(args.page_index).limit(args.page_size)
     total_records = customer_coll.count_documents(query)
     users = [doc for doc in docs]
 
-    cleaner(users)
+    remove_id(users)
 
     # TODO: currently we consider all users as customer, in future this must change
     for item in users:
@@ -143,15 +162,15 @@ async def search_marketer_user(
 
 
 @app.get("/user_profile/", tags=["users"])
-async def get_user_profile(first_name: str='', last_name: str='', marketer_name: str='', page_size: int=1, page_index: int=0):
+async def get_user_profile(args: UserIn = Depends(UserIn)):
     db = get_database()
 
     customer_coll = db["customers"]
 
     query = {"$and": [
-        {"Referer": {"$regex": marketer_name}},
-        {"FirstName": {"$regex": first_name}},
-        {"LastName": {"$regex": last_name }}
+        {"Referer": {"$regex": args.marketer_name}},
+        {"FirstName": {"$regex": args.first_name}},
+        {"LastName": {"$regex": args.last_name }}
         ]
     }
 
@@ -162,16 +181,16 @@ async def get_user_profile(first_name: str='', last_name: str='', marketer_name:
 
     total_records = customer_coll.count_documents(query)
 
-    docs = customer_coll.find(query, fields).skip(page_index).limit(page_size)
+    docs = customer_coll.find(query, fields).skip(args.page_index).limit(args.page_size)
     response = [d for d in docs]
 
-    cleaner(response)
+    remove_id(response)
 
     return { "TotalRecords": total_records, "Response": response}
 
 
-@app.get("/get_user_fee", tags=["users"])
-async def get_user_fee(marketer_name, trade_code):
+@app.get("/user_fee", tags=["users"])
+async def get_user_fee(args: UserFee = Depends(UserFee)):
     db = get_database()
 
     customers_coll = db["customers"]
@@ -179,8 +198,8 @@ async def get_user_fee(marketer_name, trade_code):
 
     # Check if customer exist
     query = {"$and": [
-        {"Referer": {"$regex": marketer_name}},
-        {"PAMCode": trade_code}
+        {"Referer": {"$regex": args.marketer_name}},
+        {"PAMCode": args.trade_code}
         ]
     }
 
@@ -193,7 +212,7 @@ async def get_user_fee(marketer_name, trade_code):
         raise HTTPException(status_code=404, detail="Customer Not Found")
     else:
         pipeline = [
-            {"$match": {"TradeCode": trade_code}},
+            {"$match": {"TradeCode": args.trade_code}},
             {
                 "$group": {
                     "_id": "$id", 
@@ -206,11 +225,11 @@ async def get_user_fee(marketer_name, trade_code):
          
         agg_result = trades_coll.aggregate(pipeline=pipeline)
 
-        return (cleaner([a for a in agg_result]))
+        return (remove_id([a for a in agg_result]))
 
 
-@app.get("/users_total_fee/{marketer_name}", tags=["users"])
-async def get_users_total_fee(marketer_name):
+@app.get("/users_total_fee/", tags=["users"])
+async def get_users_total_fee(args: UserTotalFee = Depends(UserTotalFee)):
     db = get_database()
 
     customers_coll = db["customers"]
@@ -218,7 +237,7 @@ async def get_users_total_fee(marketer_name):
 
     # Check if customer exist
     query = {"$and": [
-        {"Referer": {"$regex": marketer_name}}
+        {"Referer": {"$regex": args.marketer_name}}
         ]
     }
 
@@ -227,12 +246,21 @@ async def get_users_total_fee(marketer_name):
     customers_records = customers_coll.find(query, fields)
     trade_codes = [c.get('PAMCode') for c in customers_records]
 
+    gregorian_date = to_gregorian(args.from_date)
+
     pipeline = [
-        {"$match": {"TradeCode": {"$in": trade_codes}}},
+        {
+            "$match": {
+                "$and": [
+                    {"TradeCode": {"$in": trade_codes}}, 
+                    {"TradeDate": {"$gt": gregorian_date}}
+                    ]
+                }
+            },
         {
             "$group": {
                 "_id": "$id", 
-                "TotalVolume": {
+                "TotalFee": {
                     "$sum": "$TradeItemBroker"
                     }
                 }
@@ -244,15 +272,72 @@ async def get_users_total_fee(marketer_name):
     return ([a for a in agg_result])
 
 
+@app.get("/users_total_trades", tags=["users"])
+def get_users_total_trades(args: UsersTotalTradesIn = Depends(UsersTotalTradesIn)):
+    db = get_database()
+
+    customers_coll = db["customers"]
+    trades_coll = db["trades"]
+
+    # Check if customer exist
+    query = {"$and": [
+        {"Referer": {"$regex": args.marketer_name}}
+        ]
+    }
+
+    fields = {"PAMCode": 1}
+
+    customers_records = customers_coll.find(query, fields)
+    trade_codes = [c.get('PAMCode') for c in customers_records]
+
+    gregorian_date = to_gregorian(args.from_date)
+
+    pipeline = [ 
+        {
+            "$match": {
+                "$and": [
+                    {"TradeCode": {"$in": trade_codes}}, 
+                    {"TradeDate": {"$gt": gregorian_date}}
+                    ]
+                }
+            },
+        {
+            "$project": {
+                "Price": 1,
+                "Volume": 1,
+                "total" : {"$multiply": ["$Price", "$Volume"]}
+            }
+        },
+        {
+            "$group": {
+                "_id": "$id", 
+                "TotalVolume": {
+                    "$sum": "$total"
+                    }
+                }
+        }
+    ]
+
+    agg_result = trades_coll.aggregate(pipeline=pipeline)
+
+    return ([a for a in agg_result])
+
+
 @app.get("/marketer/", tags=["marketers"])
-async def get_marketer_profile(name: str=''):
+async def get_marketer_profile(args: MarketerIn = Depends(MarketerIn)):
     db = get_database()
 
     marketers_coll = db["marketers"]
-    query = {"FirstName": {"$regex": name}}
+    query = {"FirstName": {"$regex": args.name}}
 
     query_result = marketers_coll.find(query)
-    return cleaner([r for r in query_result])
+    return remove_id([r for r in query_result])
+
+
+# TODO: implement marketers' costs
+@app.get("/marketer_costs/", tags=["marketers"])
+async def cal_marketer_costs():
+    pass
 
 
 if __name__ == "__main__":
