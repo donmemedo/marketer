@@ -1,12 +1,17 @@
 variables:
     IMAGE_NAME: marketer
     IMAGE_TAG: 0.0.1
-    SMS_Message: "link-shortener->built-deployed"
+    SMS_Message: "marketer->built-deployed"
 
 stages:
   - Build
   - Deploy
   - Notifications
+
+echoall:
+  stage: Build
+  script:
+      - echo $REGISTRY_HOST
 
 build:
     stage: Build
