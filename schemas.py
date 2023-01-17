@@ -65,3 +65,9 @@ class UsersTotalPureIn:
     # HACK: because Pydantic do not support Jalali Date, I had to use the universal calendar.
     from_date: date = Query(current_date)
     to_date: date = Query(current_date)
+
+
+@dataclass
+class PureLastNDaysIn:
+    marketer_name: str
+    last_n_days: int
