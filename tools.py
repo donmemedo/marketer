@@ -21,3 +21,12 @@ def to_gregorian(date_: date):
 
 
     return gregorian_date
+
+
+def peek(iterable):
+    try:
+        first = next(iterable)
+    except StopIteration:
+        return None
+    
+    return first

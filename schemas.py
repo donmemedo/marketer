@@ -23,16 +23,17 @@ class UserIn:
 
 
 @dataclass
-class MarketerUsersIn:
+class UsersTotalVolumeIn:
     marketer_name: str
     # HACK: because Pydantic do not support Jalali Date, I had to use the universal calendar.
     from_date: date = Query(current_date)
+    to_date: date = Query(current_date)
     page_index: int = Query(0)
     page_size: int = Query(5)
 
 
 @dataclass
-class UserTotalTradesIn:
+class UserTotalVolumeIn:
     trade_code: str
     # HACK: because Pydantic do not support Jalali Date, I had to use the universal calendar.
     from_date: date = Query(current_date)
@@ -59,7 +60,8 @@ class UserTotalFee:
 
 
 @dataclass
-class UsersTotalTradesIn:
+class UsersTotalPureIn:
     marketer_name: str 
     # HACK: because Pydantic do not support Jalali Date, I had to use the universal calendar.
     from_date: date = Query(current_date)
+    to_date: date = Query(current_date)
