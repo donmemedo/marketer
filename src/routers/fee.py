@@ -1,22 +1,30 @@
-from fastapi import Depends, HTTPException, APIRouter
+from fastapi import Depends, HTTPException, APIRouter, Request
 from database import get_database
 from tools import remove_id, to_gregorian, peek
 from schemas import UserFee, UserTotalFee
+from tokens import JWTBearer, get_sub
 
 
 fee_router = APIRouter(prefix='/fee', tags=['fee'])
 
 
-@fee_router.get("/user")
-async def get_user_fee(args: UserFee = Depends(UserFee)):
+@fee_router.get("/user", dependencies=[Depends(JWTBearer())])
+async def get_user_fee(request: Request, args: UserFee = Depends(UserFee)):
+    # get user id
+    marketer_id = get_sub(request)    
     db = get_database()
 
     customers_coll = db["customers"]
     trades_coll = db["trades"]
+    marketers_coll = db["marketers"]
+    # check if marketer exists and return his name
+    query_result = marketers_coll.find({"IdpId": marketer_id})
+
+    marketer_dict = peek(query_result)
 
     # Check if customer exist
     query = {"$and": [
-        {"Referer": {"$regex": args.marketer_name}},
+        {"Referer": {"$regex": marketer_dict.get("FirstName")}},
         {"PAMCode": args.trade_code}
         ]
     }
@@ -46,16 +54,25 @@ async def get_user_fee(args: UserFee = Depends(UserFee)):
         return (remove_id([a for a in agg_result]))
 
 
-@fee_router.get("/users/")
-async def get_users_total_fee(args: UserTotalFee = Depends(UserTotalFee)):
+@fee_router.get("/users/", dependencies=[Depends(JWTBearer())])
+async def get_users_total_fee(request: Request, args: UserTotalFee = Depends(UserTotalFee)):
+    # get user id
+    marketer_id = get_sub(request)    
+
     db = get_database()
 
+    marketer_coll = db["marketers"]
     customers_coll = db["customers"]
     trades_coll = db["trades"]
 
-    # Check if customer exist
+    # check if marketer exists and return his name
+    query_result = marketer_coll.find({"IdpId": marketer_id})
+
+    marketer_dict = peek(query_result)
+
+    # Check if customer exists
     query = {"$and": [
-        {"Referer": {"$regex": args.marketer_name}}
+        {"Referer": {"$regex": marketer_dict.get('FirstName')}}
         ]
     }
 

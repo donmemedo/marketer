@@ -21,59 +21,50 @@ async def get_users_trades(args: UsersTotalVolumeIn = Depends(UsersTotalVolumeIn
     from_gregorian_date = to_gregorian(args.from_date)
     to_gregorian_date = to_gregorian(args.to_date)
 
+    
     query = {"Referer": {"$regex": args.marketer_name}}
 
     fields = {"PAMCode": 1}
 
     records = customer_coll.find(query, fields).skip(args.page_index).limit(args.page_size)
 
-    total_records = customer_coll.count_documents(query)
-
     trade_codes = []
 
     for record in records:
         trade_codes.append(record["PAMCode"])
 
-    response_list = []
+    golden_pipeline = [
+        {
+            "$match": {"$and": [
+                {"TradeCode": {"$in": trade_codes}},
+                {"TradeDate": {"$gte": from_gregorian_date}},
+                {"TradeDate": {"$lte": to_gregorian_date}}
+            ]}
+        },
+        {
+            "$group": {
+                "_id": "$TradeCode",
+                "TotalVolume": {"$sum": {"$multiply": ["$Price", "$Volume"]}}
+            }
+        },
+        {
+            "$project": {
+                "_id": 0,
+                "TradeCode": "$_id",
+                "TotalVolume": 1
+            }
+        },
+        {
+            "$limit": args.page_size
+        },
+        {
+            "$skip": args.page_index
+        }
+    ]
 
-    for trade_code in trade_codes:
-        pipeline = [
-            {
-                "$match": {
-                    "$and": [
-                        {"TradeCode": trade_code}, 
-                        {"TradeDate": {"$gte": from_gregorian_date}},
-                        {"TradeDate": {"$lte": to_gregorian_date}}
-                        ]
-                    }
-                },
-            {
-                "$project": {
-                    "TradeCode": 1,
-                    "Price": 1,
-                    "Volume": 1,
-                    "total": {"$multiply": ["$Price", "$Volume"]},
-                }
-            },
-            {
-                "$group": {
-                    "_id": "$id",
-                    "TradeCode": {"$first": "$TradeCode"},
-                    "TotalVolume": {"$sum": "$total"},
-                }
-            },
-        ]
-        aggregate = trades_coll.aggregate(pipeline=pipeline)
+    response = trades_coll.aggregate(pipeline=golden_pipeline)
 
-        records = [r for r in aggregate]
-        remove_id(records)
-
-        if not records:
-            response_list.append({"TradeCode": trade_code, "TotalVolume": 0})
-        else:
-            response_list.append(*records)
-
-    return { "Results": response_list, "TotalRecords": total_records}
+    return { "Results": list(response), "TotalRecords": ""}
 
 
 @volume_router.get("/user/")
