@@ -48,13 +48,11 @@ class SearchUserIn:
 
 @dataclass
 class UserFee:
-    marketer_name: str
     trade_code: str
 
 
 @dataclass
 class UserTotalFee:
-    marketer_name: str
     # HACK: because Pydantic do not support Jalali Date, I had to use the universal calendar.
     from_date: date = Query(current_date)
 
