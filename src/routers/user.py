@@ -1,20 +1,31 @@
-from fastapi import APIRouter, Depends
-from tools import to_gregorian, remove_id
+from fastapi import APIRouter, Depends, Request
+from tools import to_gregorian, remove_id, peek
 from schemas import SearchUserIn, UserIn
 from database import get_database
 from datetime import date, timedelta
+from tokens import JWTBearer, get_sub
+from serializers import marketer_entity
+from collections import defaultdict
 
 
 user_router = APIRouter(prefix='/user', tags=['user'])
 
 
-@user_router.get("/list/")
-async def search_marketer_user(args: SearchUserIn = Depends(SearchUserIn)):
+@user_router.get("/list/", dependencies=[Depends(JWTBearer())])
+async def search_marketer_user(request: Request, args: SearchUserIn = Depends(SearchUserIn)):
+    marketer_id = get_sub(request)  
     db = get_database()
 
     customer_coll = db["customers"]
+    marketers_coll = db["marketers"]
+    trades_coll = db["trades"]
 
-    query = {"Referer": {"$regex": args.marketer_name}}
+    # check if marketer exists and return his name
+    query_result = marketers_coll.find({"IdpId": marketer_id})
+
+    marketer_dict = peek(query_result)
+
+    query = {"Referer": {"$regex": marketer_dict.get("FirstName")}}
 
     fields = {
         "Username": 1,
@@ -34,39 +45,69 @@ async def search_marketer_user(args: SearchUserIn = Depends(SearchUserIn)):
     for item in users:
         item.update({"UserType": "مشتری"})
 
-    trades_coll = db["trades"]
 
     # get last month starting date
     today = date.today()
     last_month = today - timedelta(days=30)
     temporary = last_month.strftime("%Y-%m-%d")
 
-    # get user trade status
-    for user in users:
-        trades_response = trades_coll.find(
-            {"TradeDate": {"$gt": temporary}, "TradeCode": user.get("PAMCode")}
-        ).limit(1)
+    trade_codes = [user.get('PAMCode') for user in users]
 
-        # unfold the results
-        results = [trade for trade in trades_response]
+    # Calculate users volumes
 
-        # specify whether the user is active or not
-        if not results:
-            user["UserStatus"] = "NotActive"
-        else:
-            user["UserStatus"] = "Active"
+    pipeline = [
+        {
+            "$match": {"$and": [
+                {"TradeCode": {"$in": trade_codes}}
+            ]}
+        },
+        {
+            "$group": {
+                "_id": "$TradeCode",
+                "TotalVolume": {"$sum": {"$multiply": ["$Price", "$Volume"]}}
+            }
+        },
+        {
+            "$project": {
+                "_id": 0,
+                "PAMCode": "$_id",
+                "TotalVolume": 1
+            }
+        }
+    ]
 
-    return {"Results": users, "TotalRecords": total_records}
+    aggr_result = trades_coll.aggregate(pipeline=pipeline)
+
+    volume_list = list(aggr_result)
+
+    
+    users_dict = {u["PAMCode"]: u for u in users}
+
+    for v in volume_list:
+        users_dict.get(v["PAMCode"]).update(v)
+
+    return {
+        "Results": list(users_dict.values()),
+        "TotalRecords": total_records
+    }
 
 
-@user_router.get("/profile/")
-async def get_user_profile(args: UserIn = Depends(UserIn)):
+@user_router.get("/profile/", dependencies=[Depends(JWTBearer())])
+async def get_user_profile(request: Request, args: UserIn = Depends(UserIn)):
+    # get user id
+    marketer_id = get_sub(request)
     db = get_database()
 
     customer_coll = db["customers"]
+    marketers_coll = db["marketers"]
+
+    # check if marketer exists and return his name
+    query_result = marketers_coll.find({"IdpId": marketer_id})
+
+    marketer_dict = peek(query_result)
 
     query = {"$and": [
-        {"Referer": {"$regex": args.marketer_name}},
+        {"Referer": {"$regex": marketer_dict.get("FistName")}},
         {"FirstName": {"$regex": args.first_name}},
         {"LastName": {"$regex": args.last_name }}
         ]

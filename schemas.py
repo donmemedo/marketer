@@ -24,7 +24,6 @@ class UserIn:
 
 @dataclass
 class UsersTotalVolumeIn:
-    marketer_name: str
     # HACK: because Pydantic do not support Jalali Date, I had to use the universal calendar.
     from_date: date = Query(current_date)
     to_date: date = Query(current_date)
@@ -41,7 +40,6 @@ class UserTotalVolumeIn:
 
 @dataclass
 class SearchUserIn:
-    marketer_name: str
     page_index: int = Query(0)
     page_size: int = Query(5)
 
@@ -59,7 +57,6 @@ class UserTotalFee:
 
 @dataclass
 class UsersTotalPureIn:
-    marketer_name: str 
     # HACK: because Pydantic do not support Jalali Date, I had to use the universal calendar.
     from_date: date = Query(current_date)
     to_date: date = Query(current_date)
@@ -67,5 +64,4 @@ class UsersTotalPureIn:
 
 @dataclass
 class PureLastNDaysIn:
-    marketer_name: str
     last_n_days: int

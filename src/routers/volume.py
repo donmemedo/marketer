@@ -1,28 +1,36 @@
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, Request
 from schemas import UserTotalVolumeIn, UsersTotalVolumeIn, UsersTotalPureIn, PureLastNDaysIn
 from database import get_database
-from tools import to_gregorian, remove_id, peek
+from tools import to_gregorian, peek
 from datetime import date, timedelta
+from tokens import JWTBearer, get_sub
+from serializers import volume_entity
 
 
 volume_router = APIRouter(prefix='/volume', tags=['volume'])
 
 
-@volume_router.get("/users/")
-async def get_users_trades(args: UsersTotalVolumeIn = Depends(UsersTotalVolumeIn)):
-
+@volume_router.get("/users/", dependencies=[Depends(JWTBearer())])
+async def get_users_trades(request: Request, args: UsersTotalVolumeIn = Depends(UsersTotalVolumeIn)):
+    # get user id
+    marketer_id = get_sub(request)    
     db = get_database()
 
     # set collections
     customer_coll = db["customers"]
     trades_coll = db["trades"]
+    marketers_coll = db["marketers"]
+
+    # check if marketer exists and return his name
+    query_result = marketers_coll.find({"IdpId": marketer_id})
+    marketer_dict = peek(query_result)
 
     # transform date from Gregorian to Jalali calendar
     from_gregorian_date = to_gregorian(args.from_date)
     to_gregorian_date = to_gregorian(args.to_date)
 
     
-    query = {"Referer": {"$regex": args.marketer_name}}
+    query = {"Referer": {"$regex": marketer_dict.get("FirstName")}}
 
     fields = {"PAMCode": 1}
 
@@ -67,51 +75,85 @@ async def get_users_trades(args: UsersTotalVolumeIn = Depends(UsersTotalVolumeIn
     return { "Results": list(response), "TotalRecords": ""}
 
 
-@volume_router.get("/user/")
-async def get_user_total_trades(args: UserTotalVolumeIn = Depends(UserTotalVolumeIn)):
-    db = get_database()
-    trades_coll = db["trades"]
-
-    # transform date from Gregorian to Jalali calendar
-    gregorian_date = to_gregorian(args.from_date)
-
-    pipeline = [
-        {
-            "$match": {
-                "$and": [
-                    {"TradeCode": args.trade_code},
-                    {"TradeDate": {"$gte": gregorian_date}}
-                    ]
-                }
-            },
-        {
-            "$project": {
-                "Price": 1,
-                "Volume": 1,
-                "total": {"$multiply": ["$Price", "$Volume"]},
-            }
-        },
-        {"$group": {"_id": "$id", "TotalVolume": {"$sum": "$total"}}},
-    ]
-    aggregate = trades_coll.aggregate(pipeline=pipeline)
-
-    records = [r for r in aggregate]
-    remove_id(records)
-
-
-    return records
-
-
-@volume_router.get("/pure")
-def get_users_total_trades(args: UsersTotalPureIn = Depends(UsersTotalPureIn)):
+@volume_router.get("/user/", dependencies=[Depends(JWTBearer())])
+async def get_user_total_trades(request: Request, args: UserTotalVolumeIn = Depends(UserTotalVolumeIn)):
+    # get user id
+    marketer_id = get_sub(request)
     db = get_database()
 
     customers_coll = db["customers"]
     trades_coll = db["trades"]
+    marketers_coll = db["marketers"]
+
+    # check if marketer exists and return his name
+    query_result = marketers_coll.find({"IdpId": marketer_id})
+
+    marketer_dict = peek(query_result)
 
     # Check if customer exist
     query = {"$and": [
-        {"Referer": {"$regex": args.marketer_name}}
+        {"Referer": {"$regex": marketer_dict.get("FirstName")}},
+        {"PAMCode": args.trade_code}
+        ]
+    }
+
+    fields = {"PAMCode": 1}
+
+    customers_records = customers_coll.find(query, fields)
+    trade_codes = peek(customers_records)
+    print(trade_codes)
+
+    if not trade_codes:
+        raise HTTPException(status_code=404, detail="Customer Not Found")
+    else:
+
+        # transform date from Gregorian to Jalali calendar
+        gregorian_date = to_gregorian(args.from_date)
+
+        pipeline = [
+            {
+                "$match": {
+                    "$and": [
+                        {"TradeCode": args.trade_code},
+                        {"TradeDate": {"$gte": gregorian_date}}
+                        ]
+                    }
+                },
+            {
+                "$project": {
+                    "Price": 1,
+                    "Volume": 1,
+                    "total": {"$multiply": ["$Price", "$Volume"]},
+                }
+            },
+            {"$group": {"_id": "$id", "TotalVolume": {"$sum": "$total"}}},
+        ]
+
+        aggre_result = trades_coll.aggregate(pipeline=pipeline)
+
+        volume_dict = next(aggre_result, {"TotalVolume": 0})
+
+        return volume_entity(volume_dict)
+
+
+@volume_router.get("/pure", dependencies=[Depends(JWTBearer())])
+def get_users_total_trades(request: Request, args: UsersTotalPureIn = Depends(UsersTotalPureIn)):
+    # get user id
+    marketer_id = get_sub(request)    
+    db = get_database()
+
+    customers_coll = db["customers"]
+    trades_coll = db["trades"]
+    marketers_coll = db["marketers"]
+
+    # check if marketer exists and return his name
+    query_result = marketers_coll.find({"IdpId": marketer_id})
+
+    marketer_dict = peek(query_result)
+
+    # Check if customer exist
+    query = {"$and": [
+        {"Referer": {"$regex": marketer_dict.get("FirstName")}}
         ]
     }
 
@@ -228,15 +270,23 @@ def get_users_total_trades(args: UsersTotalPureIn = Depends(UsersTotalPureIn)):
         total_volume = total_sell + total_buy
         return { "TotalPureVolume": total_volume }
     else:
-        raise HTTPException(status_code=404, detail="Null response from database")
+        return { "TotalPureVolume": 0 }
 
 
-@volume_router.get("/pure_last_n_days")
-def pure_last_n_day(args: PureLastNDaysIn = Depends(PureLastNDaysIn)):
+@volume_router.get("/pure_last_n_days", dependencies=[Depends(JWTBearer())])
+def pure_last_n_day(request: Request, args: PureLastNDaysIn = Depends(PureLastNDaysIn)):
+    # get user id
+    marketer_id = get_sub(request) 
     db = get_database()
 
     customers_coll = db["customers"]
     trades_coll = db["trades"]
+    marketers_coll = db["marketers"]
+
+    # check if marketer exists and return his name
+    query_result = marketers_coll.find({"IdpId": marketer_id})
+
+    marketer_dict = peek(query_result)
 
     # Get current date
     from_date = date.today() - timedelta(days=args.last_n_days)
@@ -244,7 +294,7 @@ def pure_last_n_day(args: PureLastNDaysIn = Depends(PureLastNDaysIn)):
     from_date = from_date.strftime("%Y-%m-%d")
     # Check if customer exist
     query = {"$and": [
-        {"Referer": {"$regex": args.marketer_name}}
+        {"Referer": {"$regex": marketer_dict.get("FirstName")}}
         ]
     }
 
@@ -355,4 +405,4 @@ def pure_last_n_day(args: PureLastNDaysIn = Depends(PureLastNDaysIn)):
         total_volume = total_sell + total_buy
         return { "TotalPureVolume": total_volume }
     else:
-        raise HTTPException(status_code=404, detail="Null response from database")
+        return { "TotalPureVolume": 0 }

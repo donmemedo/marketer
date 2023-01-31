@@ -3,6 +3,7 @@ from database import get_database
 from tools import remove_id, to_gregorian, peek
 from schemas import UserFee, UserTotalFee
 from tokens import JWTBearer, get_sub
+from serializers import fee_entity
 
 
 fee_router = APIRouter(prefix='/fee', tags=['fee'])
@@ -17,6 +18,7 @@ async def get_user_fee(request: Request, args: UserFee = Depends(UserFee)):
     customers_coll = db["customers"]
     trades_coll = db["trades"]
     marketers_coll = db["marketers"]
+
     # check if marketer exists and return his name
     query_result = marketers_coll.find({"IdpId": marketer_id})
 
@@ -35,14 +37,14 @@ async def get_user_fee(request: Request, args: UserFee = Depends(UserFee)):
     trade_codes = [c for c in customers_records]
 
     if not trade_codes:
-        raise HTTPException(status_code=404, detail="Customer Not Found")
+        return {"TotalVolume": 0}
     else:
         pipeline = [
             {"$match": {"TradeCode": args.trade_code}},
             {
                 "$group": {
                     "_id": "$id", 
-                    "TotalVolume": {
+                    "TotalFee": {
                         "$sum": "$TradeItemBroker"
                         }
                     }
@@ -51,7 +53,9 @@ async def get_user_fee(request: Request, args: UserFee = Depends(UserFee)):
          
         agg_result = trades_coll.aggregate(pipeline=pipeline)
 
-        return (remove_id([a for a in agg_result]))
+        fee_dict = next(agg_result, {"TotalFee": 0})
+        
+        return fee_entity(fee_dict)
 
 
 @fee_router.get("/users/", dependencies=[Depends(JWTBearer())])
@@ -112,4 +116,4 @@ async def get_users_total_fee(request: Request, args: UserTotalFee = Depends(Use
     if agg_result is not None:
         return agg_result
     else:
-        raise HTTPException(status_code=404, detail="Null response from database")
+        return {"TotalFee": 0 }
