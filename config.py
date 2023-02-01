@@ -1,6 +1,7 @@
 from pydantic import BaseSettings
+import os
 
-
+os.getenv("DOCS_URL")
 class Settings(BaseSettings):
     DEFAULT_VARS = "EMTPY"
     VERSION = "0.0.1"
