@@ -10,8 +10,7 @@ from fastapi.middleware.cors import CORSMiddleware
 app = FastAPI(
     version=setting.VERSION,
     title=setting.SWAGGER_TITLE,
-    docs_url=setting.DOCS_URL,
-    root_path=setting.DOCS_URL
+    docs_url=setting.DOCS_URL
     )
 
 origins = ["*"]
