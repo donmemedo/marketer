@@ -7,6 +7,7 @@ class Settings(BaseSettings):
     MONGO_CONNECTION_STRING = "mongodb://root:1qaz1qaz@localhost:27017/"
     MONGO_DATABASE = "brokerage"
     SWAGGER_TITLE = "Marketer API"
+    API_PREFIX = "/marketer"
 
 
 setting = Settings()
