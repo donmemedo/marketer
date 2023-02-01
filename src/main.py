@@ -13,10 +13,7 @@ app = FastAPI(
     docs_url=setting.DOCS_URL
     )
 
-origins = [
-    "http://cluster.tech1a.co:9031",
-    "cluster.tech1a.co:9031"
-]
+origins = ["*"]
 
 app.add_middleware(
     CORSMiddleware,
