@@ -8,6 +8,7 @@ class Settings(BaseSettings):
     MONGO_DATABASE = "brokerage"
     SWAGGER_TITLE = "Marketer API"
     API_PREFIX = "/marketer"
+    DOCS_URL = "/marketer/docs"
 
 
 setting = Settings()

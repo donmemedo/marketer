@@ -7,7 +7,12 @@ from routers.user import user_router
 from fastapi.middleware.cors import CORSMiddleware
 
 
-app = FastAPI(version=setting.VERSION, title=setting.SWAGGER_TITLE)
+app = FastAPI(
+    version=setting.VERSION,
+    title=setting.SWAGGER_TITLE,
+    docs_url=setting.DOCS_URL
+    )
+
 origins = [
     "http://cluster.tech1a.co:9031",
     "cluster.tech1a.co:9031"
@@ -22,7 +27,6 @@ app.add_middleware(
 )
 
 # Add all routers 
-# Milad joon doostet daram
 app.include_router(plan_router, prefix=setting.API_PREFIX)
 app.include_router(fee_router, prefix=setting.API_PREFIX)
 app.include_router(volume_router, prefix=setting.API_PREFIX)
