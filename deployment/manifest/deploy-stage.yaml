@@ -46,7 +46,7 @@ spec:
     - host: tech1a.co
       http:
         paths:
-        - path: /marketer/.*
+        - path: /marketer
           pathType: Prefix
           backend:
             service:
