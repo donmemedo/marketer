@@ -9,6 +9,6 @@ class Settings(BaseSettings):
     SWAGGER_TITLE = "Marketer API"
     API_PREFIX = "/marketer"
     DOCS_URL = "/marketer/docs"
-
+    OPENAPI_URL = "/marketer/openapi.json"
 
 setting = Settings()

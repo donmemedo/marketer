@@ -10,6 +10,8 @@ from fastapi.middleware.cors import CORSMiddleware
 app = FastAPI(
     version=setting.VERSION,
     title=setting.SWAGGER_TITLE,
+    openapi_url=setting.OPENAPI_URL,
+    docs_url=setting.DOCS_URL
     )
 
 origins = ["*"]
@@ -22,8 +24,9 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+
 # Add all routers 
-app.include_router(plan_router)
-app.include_router(fee_router)
-app.include_router(volume_router)
-app.include_router(user_router)
+app.include_router(plan_router, prefix=setting.API_PREFIX)
+app.include_router(fee_router, prefix=setting.API_PREFIX)
+app.include_router(volume_router, prefix=setting.API_PREFIX)
+app.include_router(user_router, prefix=setting.API_PREFIX)
