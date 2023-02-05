@@ -43,7 +43,7 @@ metadata:
 spec:
   ingressClassName: nginx
   rules:
-    - host: tech1a.co
+    - host: stg.tech1a.co
       http:
         paths:
         - path: /marketer

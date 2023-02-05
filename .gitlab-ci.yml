@@ -3,12 +3,12 @@ variables:
     IMAGE_TAG: 0.0.1
     SMS_Message: "marketer->built-deployed"
     REGISTRY_HOST: $DOCKER_PRIVATE_REGISTRY_IP:$DOCKER_PRIVATE_REGISTRY_PORT
-    NAMESPACE: marketer
+    NAMESPACE: stg-marketer
 
 stages:
   - Build
   - Deploy
-  # - Notifications
+  - Notifications
 
 build:
     stage: Build
@@ -24,6 +24,7 @@ build:
         - docker build . -t $REGISTRY_HOST/repository/tech1a-docker-registry/$IMAGE_NAME:latest -t $REGISTRY_HOST/repository/tech1a-docker-registry/$IMAGE_NAME:$CI_PIPELINE_ID
         - docker push $REGISTRY_HOST/repository/tech1a-docker-registry/$IMAGE_NAME:latest
         - docker push $REGISTRY_HOST/repository/tech1a-docker-registry/$IMAGE_NAME:$CI_PIPELINE_ID
+
 deploy-staging:
   stage: Deploy
   image: dtzar/helm-kubectl:3.0.3
@@ -34,29 +35,11 @@ deploy-staging:
     - kubectl -n "$NAMESPACE" apply -f deployment/stage/stage.yaml
     - kubectl set image -n "$NAMESPACE" deployment/marketer-api marketer-api=$REGISTRY_HOST/repository/tech1a-docker-registry/$IMAGE_NAME:$CI_PIPELINE_ID
 
-
-
-# deploy:
-#   stage: Deploy
-#   variables: 
-#     DOCKER_HOST: "ssh://$DOCKER_SWARM_IP"
-#   before_script:
-#     - 'which ssh-agent || ( apt-get update -y && apt-get install openssh-client -y )'
-#     - mkdir -p ~/.ssh
-#     - echo "$DOCKER_SWARM_KEY" > ~/.ssh/id_rsa
-#     - chmod 600 ~/.ssh/id_rsa
-#     - eval "$(ssh-agent -s)"
-#     - ssh-add ~/.ssh/id_rsa
-#     - ssh-keyscan -H $DOCKER_SWARM_IP >> ~/.ssh/known_hosts
-#   script:
-#     - docker stack deploy -c docker-compose.yml $IMAGE_NAME
-#   retry: 2
-
-# SMS:
-#   stage: Notifications
-#   image: curlimages/curl:7.84.0
-#   variables:
-#     SMSGroup_PRIVATE: '989355789980'
-#   script:
-#     - curl -X POST "http://my.candoosms.com/services/URLService/URN/?username=$SMS_PROVIDER_USER&password=$SMS_PROVIDER_PASSWORD&command=send&src=$SMS_SEND_SRC&destinations=$SMSGroup_PRIVATE&body=$SMS_Message&flash=0"
-#   retry: 2
+SMS:
+  stage: Notifications
+  image: curlimages/curl:7.84.0
+  variables:
+    SMSGroup_PRIVATE: '989355789980'
+  script:
+    - curl -X POST "http://my.candoosms.com/services/URLService/URN/?username=$SMS_PROVIDER_USER&password=$SMS_PROVIDER_PASSWORD&command=send&src=$SMS_SEND_SRC&destinations=$SMSGroup_PRIVATE&body=$SMS_Message&flash=0"
+  retry: 2
