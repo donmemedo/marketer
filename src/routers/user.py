@@ -1,18 +1,21 @@
 from fastapi import APIRouter, Depends, Request
-from tools import to_gregorian, remove_id, peek
-from schemas import SearchUserIn, UserIn
+from tools import remove_id, peek
+from schemas import UserIn, UserOut
 from database import get_database
 from datetime import date, timedelta
 from tokens import JWTBearer, get_sub
-from serializers import marketer_entity
-from collections import defaultdict
+from fastapi_pagination.ext.pymongo import paginate
+from fastapi_pagination import Page, add_pagination
 
 
 user_router = APIRouter(prefix='/user', tags=['user'])
 
+# FIXME: 
+#   when using pagination, you cannot add new keys to the sequence, 
+#   try to find a way to address the issue.
 
 @user_router.get("/list/", dependencies=[Depends(JWTBearer())])
-async def search_marketer_user(request: Request, args: SearchUserIn = Depends(SearchUserIn)):
+async def search_marketer_user(request: Request):
     marketer_id = get_sub(request)  
     db = get_database()
 
@@ -35,7 +38,7 @@ async def search_marketer_user(request: Request, args: SearchUserIn = Depends(Se
         "BankAccountNumber": 1,
     }
 
-    docs = customer_coll.find(query, fields).skip(args.page_index).limit(args.page_size)
+    docs = customer_coll.find(query, fields).skip(1).limit(10)
     total_records = customer_coll.count_documents(query)
     users = [doc for doc in docs]
 
@@ -85,12 +88,13 @@ async def search_marketer_user(request: Request, args: SearchUserIn = Depends(Se
 
     for v in volume_list:
         users_dict.get(v["PAMCode"]).update(v)
-
+    print(users_dict)
     return {
         "Results": list(users_dict.values()),
         "TotalRecords": total_records
     }
 
+# add_pagination(user_router)
 
 @user_router.get("/profile/", dependencies=[Depends(JWTBearer())])
 async def get_user_profile(request: Request, args: UserIn = Depends(UserIn)):
@@ -124,5 +128,4 @@ async def get_user_profile(request: Request, args: UserIn = Depends(UserIn)):
     response = [d for d in docs]
 
     remove_id(response)
-
     return { "TotalRecords": total_records, "Response": response}

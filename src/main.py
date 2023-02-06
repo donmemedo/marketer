@@ -2,7 +2,7 @@ from fastapi import FastAPI
 from config import setting
 from routers.plan import plan_router
 from routers.fee import fee_router
-from routers.volume import volume_router
+from routers.volume_and_fee import volume_and_fee_router
 from routers.user import user_router
 from fastapi.middleware.cors import CORSMiddleware
 
@@ -27,6 +27,5 @@ app.add_middleware(
 
 # Add all routers 
 app.include_router(plan_router, prefix=setting.API_PREFIX)
-app.include_router(fee_router, prefix=setting.API_PREFIX)
-app.include_router(volume_router, prefix=setting.API_PREFIX)
+app.include_router(volume_and_fee_router, prefix=setting.API_PREFIX)
 app.include_router(user_router, prefix=setting.API_PREFIX)
