@@ -23,7 +23,6 @@ async def get_marketer_profile(request: Request):
     return marketer_entity(marketer_dict) 
 
 
-# TODO: implement marketers' costs
-#@plan_router.get("/cost/")
-#async def cal_marketer_cost(args: CostIn = Depends[CostIn]):
-#    pass
+@plan_router.get("/cost/")
+async def cal_marketer_cost(args: CostIn = Depends(CostIn)):
+    pass
