@@ -96,3 +96,22 @@ class CostIn(BaseModel):
     insurance: int
     collateral: int
     tax: int
+
+
+@dataclass
+class MarketerInvitationIn():
+    id: int
+    invitation_link: str
+
+
+class MarketerInvitationOut(BaseModel):
+    Id: int
+    FirstName: str
+    LastName: str
+    IsOrganization: str
+    RefererType: str
+    CreatedBy: str
+    CreateDate: str
+    ModifiedBy: str
+    ModifiedDate: str
+    InvitationLink: Optional[str] = ...

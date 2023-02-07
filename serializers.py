@@ -12,7 +12,8 @@ def marketer_entity(marketer) -> dict:
     "IsCustomer": marketer.get("IsCustomer"),
     "IsEmployee": marketer.get("IsEmployee"),
     "CustomerType": marketer.get("CustomerType"),
-    "IdpId": marketer.get("IdpId")
+    "IdpId": marketer.get("IdpId"),
+    "InvitationLink": marketer.get("InvitationLink")
     }
 
 
