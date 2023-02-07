@@ -7,10 +7,10 @@ from tokens import JWTBearer, get_sub
 from serializers import volume_entity
 
 
-volume_and_fee_router = APIRouter(prefix='/volume', tags=['volume'])
+volume_and_fee_router = APIRouter(prefix='/volume-and-fee', tags=['volume'])
 
 
-@volume_and_fee_router.get("/user-total-pure-volume-and-fee/", dependencies=[Depends(JWTBearer())])
+@volume_and_fee_router.get("/user-total/", dependencies=[Depends(JWTBearer())])
 async def get_user_total_trades(request: Request, args: UserTotalVolumeIn = Depends(UserTotalVolumeIn)):
     # get user id
     marketer_id = get_sub(request)
@@ -26,26 +26,18 @@ async def get_user_total_trades(request: Request, args: UserTotalVolumeIn = Depe
     marketer_dict = peek(query_result)
 
     # Check if customer exist
-    query = {"$and": [
-        {"Referer": {"$regex": marketer_dict.get("FirstName")}},
-        {"PAMCode": args.trade_code}
-        ]
-    }
+    query = {"PAMCode": args.trade_code}
 
-    fields = {"PAMCode": 1}
+    fields = {"PAMCode": 1, "Referer": 1}
 
     customers_records = customers_coll.find(query, fields)
+
     trade_codes = peek(customers_records)
-    print(args.trade_code, trade_codes)
-    if args.trade_code not in trade_codes:
-        raise HTTPException(status_code=404, detail="Customer Not Found")
-    else:
-
         # transform date from Gregorian to Jalali calendar
-        from_gregorian_date = to_gregorian(args.from_date)
-        to_gregorian_date = to_gregorian(args.from_date)
+    from_gregorian_date = to_gregorian(args.from_date)
+    to_gregorian_date = to_gregorian(args.to_date)
 
-        buy_pipeline = [ 
+    buy_pipeline = [ 
         {
             "$match": {
                 "$and": [
@@ -95,10 +87,9 @@ async def get_user_total_trades(request: Request, args: UserTotalVolumeIn = Depe
         {
             "$match": {
                 "$and": [
-                    {"TradeCode": args.trade_codes}, 
+                    {"TradeCode": args.trade_code}, 
                     {"TradeDate": {"$gte": from_gregorian_date}},
-                    {"TradeDate": {"$lte": to_gregorian_date}},
-                    {"TradeType": 2}
+                    {"TradeDate": {"$lte": to_gregorian_date}}
                     ]
                 }
             },
@@ -153,7 +144,7 @@ async def get_user_total_trades(request: Request, args: UserTotalVolumeIn = Depe
         return { "TotalPureVolume": 0 }
 
 
-@volume_and_fee_router.get("/marketer-total-pure-volume-and-fee", dependencies=[Depends(JWTBearer())])
+@volume_and_fee_router.get("/marketer-total", dependencies=[Depends(JWTBearer())])
 def get_marketer_total_trades(request: Request, args: UsersTotalPureIn = Depends(UsersTotalPureIn)):
     # get user id
     marketer_id = get_sub(request)    
