@@ -2,7 +2,6 @@ from fastapi import APIRouter, Depends, HTTPException, Request
 from schemas import UserTotalVolumeIn, UsersTotalVolumeIn, UsersTotalPureIn, PureLastNDaysIn, PureOut
 from database import get_database
 from tools import to_gregorian, peek
-from datetime import date, timedelta
 from tokens import JWTBearer, get_sub
 from serializers import volume_entity
 
@@ -136,6 +135,7 @@ async def get_user_total_trades(request: Request, args: UserTotalVolumeIn = Depe
         total_sell = sell_agg_result.get("TotalSell")
         total_volume = total_sell + total_buy
         total_fee = sell_agg_result.get("TotalFee") + buy_agg_result.get("TotalFee")
+        type(sell_agg_result)
         return { 
             "TotalPureVolume": total_volume, 
             "TotalFee": total_fee 

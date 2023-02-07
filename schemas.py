@@ -23,6 +23,15 @@ class UserIn:
 
 
 @dataclass
+class UserOut:
+    FirstName: str
+    LastName: str
+    PAMCode: str
+    UserName: str
+    BankAccountNumber: str
+
+
+@dataclass
 class UsersTotalVolumeIn:
     # HACK: because Pydantic do not support Jalali Date, I had to use the universal calendar.
     from_date: date = Query(current_date)
@@ -36,6 +45,7 @@ class UserTotalVolumeIn:
     trade_code: str
     # HACK: because Pydantic do not support Jalali Date, I had to use the universal calendar.
     from_date: date = Query(current_date)
+    to_date: date = Query(current_date)
 
 
 @dataclass
@@ -47,12 +57,15 @@ class SearchUserIn:
 @dataclass
 class UserFee:
     trade_code: str
+    from_date: date = Query(current_date)
+    to_date: date = Query(current_date)
 
 
 @dataclass
 class UserTotalFee:
     # HACK: because Pydantic do not support Jalali Date, I had to use the universal calendar.
     from_date: date = Query(current_date)
+    to_date: date = Query(current_date)
 
 
 @dataclass
@@ -60,6 +73,13 @@ class UsersTotalPureIn:
     # HACK: because Pydantic do not support Jalali Date, I had to use the universal calendar.
     from_date: date = Query(current_date)
     to_date: date = Query(current_date)
+
+
+@dataclass
+class PureOut:
+    Result: list
+    Error: str
+    TimeGenerated: str
 
 
 @dataclass
