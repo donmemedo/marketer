@@ -2,6 +2,8 @@ from fastapi import Query
 from dataclasses import dataclass
 from datetime import date
 from khayyam import *
+from pydantic import BaseModel
+from typing import Optional
 
 
 current_date = JalaliDatetime.today().replace(day=1).strftime("%Y-%m-%d")
@@ -22,12 +24,13 @@ class UserIn:
     page_index: int = Query(0)
 
 
-@dataclass
-class UserOut:
+class UserOut(BaseModel):
     FirstName: str
     LastName: str
     PAMCode: str
-    UserName: str
+    Username: Optional[str]
+    Mobile: str
+    RegisterDate: str
     BankAccountNumber: str
 
 
@@ -85,3 +88,11 @@ class PureOut:
 @dataclass
 class PureLastNDaysIn:
     last_n_days: int
+
+
+@dataclass
+class CostIn(BaseModel):
+    salary: int
+    insurance: int
+    collateral: int
+    tax: int

@@ -1,38 +1,20 @@
-from fastapi import APIRouter, Depends, HTTPException, Request
-from schemas import UserTotalVolumeIn, UsersTotalVolumeIn, UsersTotalPureIn, PureLastNDaysIn, PureOut
+from fastapi import APIRouter, Depends, Request
+from schemas import UserTotalVolumeIn, UsersTotalPureIn
 from database import get_database
 from tools import to_gregorian, peek
 from tokens import JWTBearer, get_sub
-from serializers import volume_entity
 
 
-volume_and_fee_router = APIRouter(prefix='/volume-and-fee', tags=['volume'])
+volume_and_fee_router = APIRouter(prefix='/volume-and-fee', tags=['Volume and Fee'])
 
 
 @volume_and_fee_router.get("/user-total/", dependencies=[Depends(JWTBearer())])
 async def get_user_total_trades(request: Request, args: UserTotalVolumeIn = Depends(UserTotalVolumeIn)):
-    # get user id
-    marketer_id = get_sub(request)
     db = get_database()
 
-    customers_coll = db["customers"]
     trades_coll = db["trades"]
-    marketers_coll = db["marketers"]
 
-    # check if marketer exists and return his name
-    query_result = marketers_coll.find({"IdpId": marketer_id})
-
-    marketer_dict = peek(query_result)
-
-    # Check if customer exist
-    query = {"PAMCode": args.trade_code}
-
-    fields = {"PAMCode": 1, "Referer": 1}
-
-    customers_records = customers_coll.find(query, fields)
-
-    trade_codes = peek(customers_records)
-        # transform date from Gregorian to Jalali calendar
+    # transform date from Gregorian to Jalali calendar
     from_gregorian_date = to_gregorian(args.from_date)
     to_gregorian_date = to_gregorian(args.to_date)
 
@@ -135,7 +117,7 @@ async def get_user_total_trades(request: Request, args: UserTotalVolumeIn = Depe
         total_sell = sell_agg_result.get("TotalSell")
         total_volume = total_sell + total_buy
         total_fee = sell_agg_result.get("TotalFee") + buy_agg_result.get("TotalFee")
-        type(sell_agg_result)
+
         return { 
             "TotalPureVolume": total_volume, 
             "TotalFee": total_fee 
@@ -171,7 +153,6 @@ def get_marketer_total_trades(request: Request, args: UsersTotalPureIn = Depends
     trade_codes = [c.get('PAMCode') for c in customers_records]
 
     from_gregorian_date = to_gregorian(args.from_date)
-
     to_gregorian_date = to_gregorian(args.to_date)
 
     buy_pipeline = [ 

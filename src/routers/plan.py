@@ -2,9 +2,10 @@ from fastapi import Depends, APIRouter, Request
 from serializers import marketer_entity
 from database import get_database
 from tokens import JWTBearer, get_sub
+from schemas import CostIn
 
 
-plan_router = APIRouter(prefix='/plan', tags=['plan'])
+plan_router = APIRouter(prefix='/plan', tags=['Plan and Cost'])
 
 
 @plan_router.get("/marketer/", dependencies=[Depends(JWTBearer())])
@@ -23,6 +24,6 @@ async def get_marketer_profile(request: Request):
 
 
 # TODO: implement marketers' costs
-@plan_router.get("/marketer_costs/")
-async def cal_marketer_costs():
-    pass
+#@plan_router.get("/cost/")
+#async def cal_marketer_cost(args: CostIn = Depends[CostIn]):
+#    pass

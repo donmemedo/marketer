@@ -1,7 +1,6 @@
 from fastapi import FastAPI
 from config import setting
 from routers.plan import plan_router
-from routers.fee import fee_router
 from routers.volume_and_fee import volume_and_fee_router
 from routers.user import user_router
 from fastapi.middleware.cors import CORSMiddleware
