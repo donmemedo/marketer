@@ -91,11 +91,13 @@ class PureLastNDaysIn:
 
 
 @dataclass
-class CostIn(BaseModel):
-    salary: int
-    insurance: int
-    collateral: int
-    tax: int
+class CostIn:
+    insurance: int = Query(0)
+    tax: int = Query(0)
+    salary: int = Query(0)
+    collateral: int = Query(0)
+    from_date: date = Query(current_date)
+    to_date: date = Query(current_date)
 
 
 @dataclass
