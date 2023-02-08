@@ -16,7 +16,7 @@ async def search_marketer_user():
 
     customer_coll = db["customers"]
 
-    return paginate(customer_coll, {})
+    return paginate(customer_coll, {}, sort=[("RegisterDate", -1)])
 
 
 @user_router.get("/profile/", dependencies=[Depends(JWTBearer())], response_model=Page[UserOut])
