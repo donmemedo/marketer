@@ -17,5 +17,6 @@ class Settings(BaseSettings):
     API_PREFIX = os.getenv("API_PREFIX")
     DOCS_URL = os.getenv("DOCS_URL")
     OPENAPI_URL = os.getenv("OPENAPI_URL")
+    ROOT_PATH = os.getenv("ROOT_PATH")
 
 setting = Settings()

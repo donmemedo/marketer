@@ -11,9 +11,9 @@ data:
   MONGO_DATABASE: "brokerage"
   SWAGGER_TITLE: "Marketer API"
   API_PREFIX: ""
-  DOCS_URL: "/docs"
-  OPENAPI_URL: "/openapi.json"
-
+  DOCS_URL: "/marketer/docs"
+  OPENAPI_URL: "/marketer/openapi.json"
+  ROOT_PATH: "/marketer"
 ---
 apiVersion: apps/v1
 kind: Deployment
