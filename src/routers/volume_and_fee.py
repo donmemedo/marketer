@@ -289,105 +289,56 @@ def users_list_by_volume(request: Request):
     customers_records = customers_coll.find(query, fields)
     trade_codes = [c.get('PAMCode') for c in customers_records]
 
-    print(len(trade_codes))
+    pipeline = [ 
+        {
+            "$match": {
+                "$and": [
+                    {"TradeCode": {"$in": trade_codes}}, 
+                    ]
+                }
+            },
+        {
+            "$project": {
+                "Price": 1,
+                "Volume": 1,
+                "Total" : {"$multiply": ["$Price", "$Volume"]},
+                "TotalCommission": 1,
+                "TradeItemBroker": 1,
+                "TradeCode": 1,
+                "Commission": {
+                    "$cond": { 
+                        "if": {"$eq": ["$TradeType", 1]}, 
+                        "then": {
+                            "$add": [
+                                "$TotalCommission",
+                                {"$multiply": ["$Price", "$Volume"]}
+                            ]
+                        }, 
+                        "else": {
+                            "$subtract": [
+                                {"$multiply": ["$Price", "$Volume"]},
+                                "$TotalCommission"
+                            ]
+                        }
+                    }
+                }
+            }
+        },
+        {
+            "$group": {
+                "_id": "$TradeCode",
+                "TotalFee": {
+                 "$sum": "$TradeItemBroker"
+                },
+                "TotalPureVolume": {"$sum": "$Commission"}
+            }
+        }
+    ]
 
-    # buy_pipeline = [ 
-        # {
-            # "$match": {
-                # "$and": [
-                    # {"TradeCode": {"$in": trade_codes}},
-                    # {"TradeType": 1}
-                    # ]
-                # }
-            # },
-        # {
-            # "$project": {
-                # "Price": 1,
-                # "Volume": 1,
-                # "Total" : {"$multiply": ["$Price", "$Volume"]},
-                # "TotalCommission": 1,
-                # "TradeItemBroker": 1,
-                # "Buy": {
-                    # "$add": [
-                        # "$TotalCommission",
-                        # {"$multiply": ["$Price", "$Volume"]}
-                        # ]
-                    # }
-            # }
-        # },
-        # {
-            # "$group": {
-                # "_id": "$id", 
-                # "TotalFee": {
-                    # "$sum": "$TradeItemBroker"
-                # },
-                # "TotalBuy": {
-                    # "$sum": "$Buy"
-                # }
-            # }
-        # },
-        # {
-            # "$project": {
-                # "_id": 0,
-                # "TotalBuy": 1,
-                # "TotalFee": 1
-            # }
-        # }
-    # ]
-# 
-    # sell_pipeline = [ 
-        # {
-            # "$match": {
-                # "$and": [
-                    # {"TradeCode": {"$in": trade_codes}}, 
-                    # ]
-                # }
-            # },
-        # {
-            # "$project": {
-                # "Price": 1,
-                # "Volume": 1,
-                # "Total" : {"$multiply": ["$Price", "$Volume"]},
-                # "TotalCommission": 1,
-                # "TradeItemBroker": 1,
-                # "TradeCode": 1,
-                # "Sell": {
-                    # "$subtract": [
-                        # {"$multiply": ["$Price", "$Volume"]},
-                        # "$TotalCommission"
-                        # ]
-                    # },
-                # "Temp": {
-                    # "$cond": { "if": {"TradeType": 1}, "then": 11, "else": 22}
-                # }
-            # }
-        # },
-        # {
-            # "$group": {
-                # "_id": "$TradeCode",
-                # "TotalFee": {
-                #  "$sum": "$TradeItemBroker"
-                # },
-                # "SellTotal": 
-            # }
-        # }
-    # ]
-# 
-    # buy_agg_result = peek(trades_coll.aggregate(pipeline=buy_pipeline))
-    # sell_agg_result = list(trades_coll.aggregate(pipeline=sell_pipeline))
-# 
-    # print(sell_agg_result)
+    aggr_result = list(trades_coll.aggregate(pipeline=pipeline))
 
-
-    return 
-    # if buy_agg_result and sell_agg_result:
-        # total_buy = buy_agg_result.get("TotalBuy")
-        # total_sell = sell_agg_result.get("TotalSell")
-        # total_volume = total_sell + total_buy
-        # total_fee = sell_agg_result.get("TotalFee") + buy_agg_result.get("TotalFee")
-        # return { 
-            # "TotalPureVolume": total_volume, 
-            # "TotalFee": total_fee 
-            # }
-    # else:
-        # return { "TotalPureVolume": 0 }
+    if aggr_result:
+        return aggr_result
+    
+    else:
+        return { "TotalPureVolume": 0 }
