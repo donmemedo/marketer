@@ -1,3 +1,20 @@
+kind: ConfigMap
+apiVersion: v1
+metadata:
+  name: marketer-api
+  labels:
+    name: marketer-api
+    instance: marketer-api
+data:
+  VERSION: "0.0.1"
+  MONGO_CONNECTION_STRING: "mongodb://root:root@mongo-marketer.stg-marketer-db.svc.cluster.local:27017/"
+  MONGO_DATABASE: "brokerage"
+  SWAGGER_TITLE: "Marketer API"
+  API_PREFIX: ""
+  DOCS_URL: "/marketer/docs"
+  OPENAPI_URL: "/marketer/openapi.json"
+
+---
 apiVersion: apps/v1
 kind: Deployment
 metadata:
@@ -15,6 +32,9 @@ spec:
       containers:
       - name: marketer-api
         image: "registry.tech1a.co:81/repository/tech1a-docker-registry/marketer:latest"
+        envFrom:
+          - configMapRef:
+              name: marketer-api
         ports:
           - name: http
             containerPort: 8000
