@@ -136,6 +136,7 @@ deploy-pro:
   retry: 2
   only:
     - main
+  when: manual
 
 deploy-pro-SMS:
   stage: Notifications
@@ -144,5 +145,3 @@ deploy-pro-SMS:
     - curl -X POST "https://my.candoosms.com/services/URLService/URN/?username=$SMS_PROVIDER_USER&password=$SMS_PROVIDER_PASSWORD&command=send&src=$SMS_SEND_SRC&destinations=$SMSGroup&body=$SMS_MESSAGE_Deploy_Pro&flash=0"
   needs:
     - job: deploy-pro
-  only:
-    - main
