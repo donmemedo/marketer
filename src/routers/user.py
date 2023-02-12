@@ -1,9 +1,9 @@
 from fastapi import APIRouter, Depends, Request
-from tools import remove_id, peek
+from tools import peek
 from schemas import UserIn, UserOut
 from database import get_database
 from tokens import JWTBearer, get_sub
-from fastapi_pagination import Page, add_pagination
+from fastapi_pagination import Page, add_pagination 
 from fastapi_pagination.ext.pymongo import paginate
 
 
@@ -33,7 +33,7 @@ async def get_user_profile(request: Request, args: UserIn = Depends(UserIn)):
 
     marketer_dict = peek(query_result)
 
-    marketer_fullname = marketer_dict.get("FirstName") + ' ' + marketer_dict.get("LastName")
+    marketer_fullname = marketer_dict.get("FirstName") + " " + marketer_dict.get("LastName")
 
     query = {"$and": [
         {"Referer": marketer_fullname}, 
@@ -41,6 +41,8 @@ async def get_user_profile(request: Request, args: UserIn = Depends(UserIn)):
         {"LastName": {"$regex": args.last_name}} 
         ]
     }
-    return paginate(customer_coll, query)
+
+    return paginate(customer_coll, query, sort=[("RegisterDate", -1)])
+
 
 add_pagination(user_router)
