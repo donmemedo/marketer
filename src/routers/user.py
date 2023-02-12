@@ -11,12 +11,21 @@ user_router = APIRouter(prefix='/user', tags=['User'])
 
 
 @user_router.get("/list/", dependencies=[Depends(JWTBearer())], response_model=Page[UserOut])
-async def search_marketer_user():
+async def search_marketer_user(request: Request):
+    # get user id
+    marketer_id = get_sub(request)
+
     db = get_database()
 
     customer_coll = db["customers"]
+    marketers_coll = db["marketers"]
 
-    return paginate(customer_coll, {}, sort=[("RegisterDate", -1)])
+    # check if marketer exists and return his name
+    query_result = marketers_coll.find({"IdpId": marketer_id})
+    marketer_dict = peek(query_result)
+    marketer_fullname = marketer_dict.get("FirstName") + " " + marketer_dict.get("LastName")
+
+    return paginate(customer_coll, {"Referer": marketer_fullname}, sort=[("RegisterDate", -1)])
 
 
 @user_router.get("/profile/", dependencies=[Depends(JWTBearer())], response_model=Page[UserOut])
