@@ -11,8 +11,8 @@ data:
   MONGO_DATABASE: "brokerage"
   SWAGGER_TITLE: "Marketer API"
   API_PREFIX: ""
-  DOCS_URL: "/marketer/docs"
-  OPENAPI_URL: "/marketer/openapi.json"
+  DOCS_URL: "/docs"
+  OPENAPI_URL: "/openapi.json"
 
 ---
 apiVersion: apps/v1
@@ -66,7 +66,7 @@ spec:
     - host: stg.tech1a.co
       http:
         paths:
-        - path: /marketer
+        - path: /marketer(/|$)(.*)
           pathType: Prefix
           backend:
             service:
