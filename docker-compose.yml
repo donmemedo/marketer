@@ -1,6 +1,6 @@
 version: "3.9"
 services:
-  online-trading-gateway:
+  marketer-api:
     image: registry.tech1a.co:81/repository/tech1a-docker-registry/marketer-api:latest
     networks:
       - omsnet
