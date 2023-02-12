@@ -31,7 +31,7 @@ spec:
     spec:
       containers:
       - name: marketer-api
-        image: "registry.tech1a.co:81/repository/tech1a-docker-registry/marketer:latest"
+        image: "registry.tech1a.co:81/repository/tech1a-docker-registry/marketer-api:latest"
         envFrom:
           - configMapRef:
               name: marketer-api
