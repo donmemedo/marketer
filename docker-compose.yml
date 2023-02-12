@@ -1,0 +1,24 @@
+version: "3.9"
+services:
+  online-trading-gateway:
+    image: registry.tech1a.co:81/repository/tech1a-docker-registry/marketer-api:latest
+    networks:
+      - omsnet
+    ports:
+      - 9040:80
+    deploy:
+      mode: replicated
+      replicas: 1    
+      update_config:
+        parallelism: 1
+        delay: 10s
+        order: start-first
+      restart_policy:
+        condition: any
+        delay: 10s
+        window: 20s
+
+networks:
+ omsnet:
+    external:
+      name: omsnet
