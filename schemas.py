@@ -29,9 +29,9 @@ class UserOut(BaseModel):
     LastName: str
     PAMCode: str
     Username: Optional[str]
-    Mobile: str
+    Mobile: Optional[str]
     RegisterDate: str
-    BankAccountNumber: str
+    BankAccountNumber: Optional[str]
 
 
 @dataclass
