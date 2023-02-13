@@ -53,6 +53,7 @@ async def cal_marketer_cost(request: Request, args: CostIn = Depends(CostIn)):
     customers_records = customers_coll.find(query, fields)
     trade_codes = [c.get('PAMCode') for c in customers_records]
 
+    print(len(trade_codes))
     from_gregorian_date = to_gregorian(args.from_date)
     to_gregorian_date = to_gregorian(args.to_date)
 
@@ -173,7 +174,7 @@ async def cal_marketer_cost(request: Request, args: CostIn = Depends(CostIn)):
         "almas": {"start": 40000000000, "marketer_share": .4}
     }
 
-    x1 = marketer_total.get("TotalPureVolume") * .65
+    x1 = marketer_total.get("TotalFee") * .65
     x2 = 0
     if marketer_plans["payeh"]["start"] <= marketer_total.get("TotalPureVolume") < marketer_plans["payeh"]["end"]:
         x2 = marketer_total.get("TotalFee") * marketer_plans["payeh"]["marketer_share"]
@@ -206,7 +207,10 @@ async def cal_marketer_cost(request: Request, args: CostIn = Depends(CostIn)):
     if args.collateral !=0:
         x3 -= args.tax
 
-    return x3
+    return {
+        "PureFee": x1, 
+        "FinalFee": x3
+        } 
 
 
 @plan_router.put("/set-invitation-link")
