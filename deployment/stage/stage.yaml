@@ -65,10 +65,10 @@ metadata:
 spec:
   ingressClassName: nginx
   rules:
-    - host: stg.tech1a.co
+    - host: stgmarketer-api.tech1a.co
       http:
         paths:
-        - path: /marketer(/|$)(.*)
+        - path: /
           pathType: Prefix
           backend:
             service:
