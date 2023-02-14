@@ -142,9 +142,10 @@ def get_marketer_total_trades(request: Request, args: UsersTotalPureIn = Depends
 
     marketer_dict = peek(query_result)
 
+    marketer_fullname = marketer_dict.get("FirstName") + " " + marketer_dict.get("LastName")
     # Check if customer exist
     query = {"$and": [
-        {"Referer": {"$regex": marketer_dict.get("FirstName")}}
+        {"Referer": {"$regex": marketer_fullname}}
         ]
     }
 
