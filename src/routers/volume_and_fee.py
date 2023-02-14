@@ -70,7 +70,8 @@ async def get_user_total_trades(request: Request, args: UserTotalVolumeIn = Depe
                 "$and": [
                     {"TradeCode": args.trade_code}, 
                     {"TradeDate": {"$gte": from_gregorian_date}},
-                    {"TradeDate": {"$lte": to_gregorian_date}}
+                    {"TradeDate": {"$lte": to_gregorian_date}},
+                    {"TradeType": 2}
                     ]
                 }
             },
