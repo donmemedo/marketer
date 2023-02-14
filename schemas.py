@@ -106,14 +106,20 @@ class MarketerInvitationIn():
     invitation_link: str
 
 
+@dataclass
+class MarketerIdpIdIn():
+    id: int
+    idpid: str
+
+
 class MarketerInvitationOut(BaseModel):
-    Id: int
-    FirstName: str
-    LastName: str
-    IsOrganization: str
-    RefererType: str
-    CreatedBy: str
-    CreateDate: str
-    ModifiedBy: str
-    ModifiedDate: str
+    Id: Optional[int]
+    FirstName: Optional[str]
+    LastName: Optional[str]
+    IsOrganization: Optional[str]
+    RefererType: Optional[str]
+    CreatedBy: Optional[str]
+    CreateDate: Optional[str]
+    ModifiedBy: Optional[str]
+    ModifiedDate: Optional[str]
     InvitationLink: Optional[str] = ...

@@ -2,7 +2,7 @@ from fastapi import Depends, APIRouter, Request
 from serializers import marketer_entity
 from database import get_database
 from tokens import JWTBearer, get_sub
-from schemas import CostIn, MarketerInvitationOut, MarketerInvitationIn
+from schemas import CostIn, MarketerInvitationOut, MarketerInvitationIn, MarketerIdpIdIn
 from fastapi_pagination import Page, add_pagination
 from fastapi_pagination.ext.pymongo import paginate
 from tools import to_gregorian, peek
@@ -222,6 +222,25 @@ async def set_marketer_invitation_link(args: MarketerInvitationIn = Depends(Mark
     update = {"$set": {"InvitationLink": args.invitation_link}}
 
     marketers_coll.update_one(filter, update)
+    query_result = marketers_coll.find(filter)
+    marketer_dict = next(query_result, None)
+
+    return marketer_entity(marketer_dict)
+
+
+@plan_router.put("/set-idp-id")
+async def set_marketer_idpid(args: MarketerIdpIdIn = Depends(MarketerIdpIdIn)):
+    db = get_database()
+    marketers_coll = db["marketers"]
+
+    filter = {"Id": args.id}
+    update = {"$set": {"IdpId": args.idpid}}
+
+    marketers_coll.update_one(filter, update)
+    query_result = marketers_coll.find(filter)
+    marketer_dict = next(query_result, None)
+
+    return marketer_entity(marketer_dict)
 
 
 @plan_router.get("/list-all-marketers/", response_model=Page[MarketerInvitationOut])
