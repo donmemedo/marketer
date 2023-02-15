@@ -11,4 +11,5 @@ class Settings(BaseSettings):
     OPENAPI_URL = ""
     ROOT_PATH = ""
 
+
 setting = Settings()

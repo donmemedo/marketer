@@ -3,6 +3,7 @@ from schemas import UserTotalVolumeIn, UsersTotalPureIn
 from database import get_database
 from tools import peek, to_gregorian_
 from tokens import JWTBearer, get_sub
+from datetime import datetime, timedelta
 
 
 volume_and_fee_router = APIRouter(prefix='/volume-and-fee', tags=['Volume and Fee'])
@@ -17,6 +18,8 @@ async def get_user_total_trades(request: Request, args: UserTotalVolumeIn = Depe
     # transform date from Gregorian to Jalali calendar
     from_gregorian_date = to_gregorian_(args.from_date)
     to_gregorian_date = to_gregorian_(args.to_date)
+    to_gregorian_date = datetime.strptime(to_gregorian_date, "%Y-%m-%d") + timedelta(days=1)
+    to_gregorian_date = to_gregorian_date.strftime("%Y-%m-%d")
 
     buy_pipeline = [ 
         {
@@ -156,6 +159,8 @@ def get_marketer_total_trades(request: Request, args: UsersTotalPureIn = Depends
 
     from_gregorian_date = to_gregorian_(args.from_date)
     to_gregorian_date = to_gregorian_(args.to_date)
+    to_gregorian_date = datetime.strptime(to_gregorian_date, "%Y-%m-%d") + timedelta(days=1)
+    to_gregorian_date = to_gregorian_date.strftime("%Y-%m-%d")
 
     buy_pipeline = [ 
         {

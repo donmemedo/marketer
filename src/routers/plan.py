@@ -6,6 +6,7 @@ from schemas import CostIn, MarketerInvitationOut, MarketerInvitationIn, Markete
 from fastapi_pagination import Page, add_pagination
 from fastapi_pagination.ext.pymongo import paginate
 from tools import to_gregorian_, peek
+from datetime import timedelta, datetime
 
 
 plan_router = APIRouter(prefix='/marketer', tags=['Marketer'])
@@ -55,6 +56,8 @@ async def cal_marketer_cost(request: Request, args: CostIn = Depends(CostIn)):
 
     from_gregorian_date = to_gregorian_(args.from_date)
     to_gregorian_date = to_gregorian_(args.to_date)
+    to_gregorian_date = datetime.strptime(to_gregorian_date, "%Y-%m-%d") + timedelta(days=1)
+    to_gregorian_date = to_gregorian_date.strftime("%Y-%m-%d")
 
     buy_pipeline = [ 
         {
