@@ -1,7 +1,7 @@
 from fastapi import APIRouter, Depends, Request
 from schemas import UserTotalVolumeIn, UsersTotalPureIn
 from database import get_database
-from tools import to_gregorian, peek
+from tools import peek, to_gregorian_
 from tokens import JWTBearer, get_sub
 
 
@@ -15,8 +15,8 @@ async def get_user_total_trades(request: Request, args: UserTotalVolumeIn = Depe
     trades_coll = db["trades"]
 
     # transform date from Gregorian to Jalali calendar
-    from_gregorian_date = to_gregorian(args.from_date)
-    to_gregorian_date = to_gregorian(args.to_date)
+    from_gregorian_date = to_gregorian_(args.from_date)
+    to_gregorian_date = to_gregorian_(args.to_date)
 
     buy_pipeline = [ 
         {
@@ -154,8 +154,8 @@ def get_marketer_total_trades(request: Request, args: UsersTotalPureIn = Depends
     customers_records = customers_coll.find(query, fields)
     trade_codes = [c.get('PAMCode') for c in customers_records]
 
-    from_gregorian_date = to_gregorian(args.from_date)
-    to_gregorian_date = to_gregorian(args.to_date)
+    from_gregorian_date = to_gregorian_(args.from_date)
+    to_gregorian_date = to_gregorian_(args.to_date)
 
     buy_pipeline = [ 
         {

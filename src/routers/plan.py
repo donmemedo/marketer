@@ -5,7 +5,7 @@ from tokens import JWTBearer, get_sub
 from schemas import CostIn, MarketerInvitationOut, MarketerInvitationIn, MarketerIdpIdIn
 from fastapi_pagination import Page, add_pagination
 from fastapi_pagination.ext.pymongo import paginate
-from tools import to_gregorian, peek
+from tools import to_gregorian_, peek
 
 
 plan_router = APIRouter(prefix='/marketer', tags=['Marketer'])
@@ -53,9 +53,8 @@ async def cal_marketer_cost(request: Request, args: CostIn = Depends(CostIn)):
     customers_records = customers_coll.find(query, fields)
     trade_codes = [c.get('PAMCode') for c in customers_records]
 
-    print(len(trade_codes))
-    from_gregorian_date = to_gregorian(args.from_date)
-    to_gregorian_date = to_gregorian(args.to_date)
+    from_gregorian_date = to_gregorian_(args.from_date)
+    to_gregorian_date = to_gregorian_(args.to_date)
 
     buy_pipeline = [ 
         {
