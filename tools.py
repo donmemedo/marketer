@@ -23,6 +23,12 @@ def to_gregorian(date_: date):
     return gregorian_date
 
 
+def to_gregorian_(date_string: str):
+    year, month, day = date_string.split('-')
+
+    return JalaliDatetime(year, month, day).todate().strftime("%Y-%m-%d")
+
+
 def peek(iterable):
     try:
         first = next(iterable)

@@ -47,8 +47,8 @@ class UsersTotalVolumeIn:
 class UserTotalVolumeIn:
     trade_code: str
     # HACK: because Pydantic do not support Jalali Date, I had to use the universal calendar.
-    from_date: date = Query(current_date)
-    to_date: date = Query(current_date)
+    from_date: str = Query(current_date)
+    to_date: str = Query(current_date)
 
 
 @dataclass
@@ -74,8 +74,8 @@ class UserTotalFee:
 @dataclass
 class UsersTotalPureIn:
     # HACK: because Pydantic do not support Jalali Date, I had to use the universal calendar.
-    from_date: date = Query(current_date)
-    to_date: date = Query(current_date)
+    from_date: str = Query(current_date)
+    to_date: str = Query(current_date)
 
 
 @dataclass
@@ -96,8 +96,8 @@ class CostIn:
     tax: int = Query(0)
     salary: int = Query(0)
     collateral: int = Query(0)
-    from_date: date = Query(current_date)
-    to_date: date = Query(current_date)
+    from_date: str = Query(current_date)
+    to_date: str = Query(current_date)
 
 
 @dataclass
