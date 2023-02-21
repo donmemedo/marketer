@@ -7,13 +7,13 @@ metadata:
     instance: marketer-api
 data:
   VERSION: "0.0.1"
-  MONGO_CONNECTION_STRING: "mongodb://root:root@mongo-marketer.stg-marketer-db.svc.cluster.local:27017/"
+  MONGO_CONNECTION_STRING: "mongodb://root:root@mongo-marketer.dev-marketer-db.svc.cluster.local:27017/"
   MONGO_DATABASE: "brokerage"
   SWAGGER_TITLE: "Marketer API"
   API_PREFIX: ""
-  DOCS_URL: "/marketer/docs"
-  OPENAPI_URL: "/marketer/openapi.json"
-  ROOT_PATH: "/marketer"
+  DOCS_URL: ""
+  OPENAPI_URL: ""
+  ROOT_PATH: ""
 ---
 apiVersion: apps/v1
 kind: Deployment
@@ -60,15 +60,13 @@ apiVersion: networking.k8s.io/v1
 kind: Ingress
 metadata:
   name: marketer-api
-  annotations:
-   nginx.ingress.kubernetes.io/rewrite-target: /$2
 spec:
   ingressClassName: nginx
   rules:
-    - host: dev.tech1a.co
+    - host: devmarketer-api.tech1a.co
       http:
         paths:
-        - path: /marketer(/|$)(.*)
+        - path: /
           pathType: Prefix
           backend:
             service:
