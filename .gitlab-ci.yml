@@ -45,13 +45,13 @@ dev:
   retry: 2
   only:
     - dev
-deploy-dev-SMS:
-  stage: Notifications
-  image: $REGISTRY_HOST/repository/tech1a-docker-registry/curlimages/curl
-  script:
-    - curl -X POST "https://my.candoosms.com/services/URLService/URN/?username=$SMS_PROVIDER_USER&password=$SMS_PROVIDER_PASSWORD&command=send&src=$SMS_SEND_SRC&destinations=$SMSGroup&body=$SMS_MESSAGE_Deploy_Pro&flash=0"
-  needs:
-    - job: deploy-dev
+# deploy-dev-SMS:
+#   stage: Notifications
+#   image: $REGISTRY_HOST/repository/tech1a-docker-registry/curlimages/curl
+#   script:
+#     - curl -X POST "https://my.candoosms.com/services/URLService/URN/?username=$SMS_PROVIDER_USER&password=$SMS_PROVIDER_PASSWORD&command=send&src=$SMS_SEND_SRC&destinations=$SMSGroup&body=$SMS_MESSAGE_Deploy_Pro&flash=0"
+#   needs:
+#     - job: deploy-dev
 
 stage:
   stage: Deploy
@@ -69,34 +69,34 @@ stage:
     - main
   when: manual
 
-deploy-stage-SMS:
-  stage: Notifications
-  image: $REGISTRY_HOST/repository/tech1a-docker-registry/curlimages/curl
-  script:
-    - curl -X POST "https://my.candoosms.com/services/URLService/URN/?username=$SMS_PROVIDER_USER&password=$SMS_PROVIDER_PASSWORD&command=send&src=$SMS_SEND_SRC&destinations=$SMSGroup&body=$SMS_MESSAGE_Deploy_Pro&flash=0"
-  needs:
-    - job: deploy-stage
+# deploy-stage-SMS:
+#   stage: Notifications
+#   image: $REGISTRY_HOST/repository/tech1a-docker-registry/curlimages/curl
+#   script:
+#     - curl -X POST "https://my.candoosms.com/services/URLService/URN/?username=$SMS_PROVIDER_USER&password=$SMS_PROVIDER_PASSWORD&command=send&src=$SMS_SEND_SRC&destinations=$SMSGroup&body=$SMS_MESSAGE_Deploy_Pro&flash=0"
+#   needs:
+#     - job: deploy-stage
 
-deploy-pro:
-  stage: Deploy Production
-  image: $REGISTRY_HOST/repository/tech1a-docker-registry/dtzar/helm-kubectl:3.0.3
-  script:
-    - mkdir -p ~/.kube
-    - chmod 700 ~/.kube
-    - echo "$K8S_STG" | base64 -d > ~/.kube/config
-    - kubectl -n "$NAMESPACE_Pro" apply -f deployment/pro/pro.yaml
-    - kubectl set image -n "$NAMESPACE_Pro" deployment/$IMAGE_NAME $IMAGE_NAME=$REGISTRY_HOST/repository/tech1a-docker-registry/$IMAGE_NAME:$IMAGE_TAG
-  needs:
-    - job: build
-  retry: 2
-  only:
-    - main
-  when: manual
+# deploy-pro:
+#   stage: Deploy Production
+#   image: $REGISTRY_HOST/repository/tech1a-docker-registry/dtzar/helm-kubectl:3.0.3
+#   script:
+#     - mkdir -p ~/.kube
+#     - chmod 700 ~/.kube
+#     - echo "$K8S_STG" | base64 -d > ~/.kube/config
+#     - kubectl -n "$NAMESPACE_Pro" apply -f deployment/pro/pro.yaml
+#     - kubectl set image -n "$NAMESPACE_Pro" deployment/$IMAGE_NAME $IMAGE_NAME=$REGISTRY_HOST/repository/tech1a-docker-registry/$IMAGE_NAME:$IMAGE_TAG
+#   needs:
+#     - job: build
+#   retry: 2
+#   only:
+#     - main
+#   when: manual
 
-deploy-pro-SMS:
-  stage: Notifications
-  image: $REGISTRY_HOST/repository/tech1a-docker-registry/curlimages/curl
-  script:
-    - curl -X POST "https://my.candoosms.com/services/URLService/URN/?username=$SMS_PROVIDER_USER&password=$SMS_PROVIDER_PASSWORD&command=send&src=$SMS_SEND_SRC&destinations=$SMSGroup&body=$SMS_MESSAGE_Deploy_Pro&flash=0"
-  needs:
-    - job: deploy-pro
+# deploy-pro-SMS:
+#   stage: Notifications
+#   image: $REGISTRY_HOST/repository/tech1a-docker-registry/curlimages/curl
+#   script:
+#     - curl -X POST "https://my.candoosms.com/services/URLService/URN/?username=$SMS_PROVIDER_USER&password=$SMS_PROVIDER_PASSWORD&command=send&src=$SMS_SEND_SRC&destinations=$SMSGroup&body=$SMS_MESSAGE_Deploy_Pro&flash=0"
+#   needs:
+#     - job: deploy-pro
