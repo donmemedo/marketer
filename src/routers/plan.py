@@ -197,27 +197,35 @@ async def cal_marketer_cost(request: Request, args: CostIn = Depends(CostIn)):
     if marketer_plans["payeh"]["start"] <= marketer_total.get("TotalPureVolume") < marketer_plans["payeh"]["end"]:
         # marketer_fee = marketer_total.get("TotalFee") * marketer_plans["payeh"]["marketer_share"]
         marketer_fee = pure_fee * marketer_plans["payeh"]["marketer_share"]
+        plan = "Payeh"
     elif marketer_plans["morvarid"]["start"] <= marketer_total.get("TotalPureVolume") < marketer_plans["morvarid"]["end"]:
         # marketer_fee = marketer_total.get("TotalFee") * marketer_plans["morvarid"]["marketer_share"]
         marketer_fee = pure_fee * marketer_plans["morvarid"]["marketer_share"]
+        plan = "Morvarid"
     elif marketer_plans["firouzeh"]["start"] <= marketer_total.get("TotalPureVolume") < marketer_plans["firouzeh"]["end"]:
         # marketer_fee = marketer_total.get("TotalFee") * marketer_plans["firouzeh"]["marketer_share"]
         marketer_fee = pure_fee * marketer_plans["firouzeh"]["marketer_share"]
+        plan = "Firouzeh"
     elif marketer_plans["aghigh"]["start"] <= marketer_total.get("TotalPureVolume") < marketer_plans["aghigh"]["end"]:
         # marketer_fee = marketer_total.get("TotalFee") * marketer_plans["aghigh"]["marketer_share"]
         marketer_fee = pure_fee * marketer_plans["aghigh"]["marketer_share"]
+        plan = "Aghigh"
     elif marketer_plans["yaghout"]["start"] <= marketer_total.get("TotalPureVolume") < marketer_plans["yaghout"]["end"]:
         # marketer_fee = marketer_total.get("TotalFee") * marketer_plans["yaghout"]["marketer_share"]
         marketer_fee = pure_fee * marketer_plans["yaghout"]["marketer_share"]
+        plan = "Yaghout"
     elif marketer_plans["zomorod"]["start"] <= marketer_total.get("TotalPureVolume") < marketer_plans["zomorod"]["end"]:
         # marketer_fee = marketer_total.get("TotalFee") * marketer_plans["zomorod"]["marketer_share"]
         marketer_fee = pure_fee * marketer_plans["zomorod"]["marketer_share"]
+        plan = "Zomorod"
     elif marketer_plans["tala"]["start"] <= marketer_total.get("TotalPureVolume") < marketer_plans["tala"]["end"]:
         # marketer_fee = marketer_total.get("TotalFee") * marketer_plans["tala"]["marketer_share"]
         marketer_fee = pure_fee * marketer_plans["tala"]["marketer_share"]
+        plan = "Tala"
     elif marketer_plans["almas"]["start"] <= marketer_total.get("TotalPureVolume"):
         # marketer_fee = marketer_total.get("TotalFee") * marketer_plans["almas"]["marketer_share"]
         marketer_fee = pure_fee * marketer_plans["almas"]["marketer_share"]
+        plan = "Almas"
 
     # final_fee = pure_fee + marketer_fee
     final_fee = marketer_fee
@@ -229,20 +237,28 @@ async def cal_marketer_cost(request: Request, args: CostIn = Depends(CostIn)):
 
     if args.tax != 0:
         # final_fee -= args.tax
-        final_fee -= final_fee * args.tax
+        tax = final_fee * args.tax
+        final_fee -= tax
 
     if args.collateral != 0:
         # final_fee -= args.tax
         collateral = final_fee * args.collateral
         #ToDo: collateral will be paid 2 months later, so it must be saved in DB.
         final_fee -= collateral
-
     if args.tax == 0 and args.collateral == 0:
         # final_fee -= args.tax
+        collateral = final_fee * 0.05
+        tax = final_fee * 0.1
         final_fee -= final_fee * 0.15
 
+
     return {
-        "PureFee": pure_fee, 
+        "TotalFee": marketer_total.get("TotalFee"),
+        "PureFee": pure_fee,
+        "MarketerFee": marketer_fee,
+        "Plan": plan,
+        "Tax": tax,
+        "Collateral": collateral,
         "FinalFee": final_fee
         }
 
