@@ -3,9 +3,9 @@ variables:
     IMAGE_TAG_dev: $CI_PIPELINE_ID
     IMAGE_TAG: $CI_PIPELINE_ID #$CI_COMMIT_TAG
     SMS_MESSAGE_BUILD: "idp-v2-backend-->Build-OK"
-    SMS_MESSAGE_Deploy_Dev: $IMAGE_NAME"-->Deployed->Develop"
-    SMS_MESSAGE_Deploy_Stg: $IMAGE_NAME"-->Deployed->Stage"
-    SMS_MESSAGE_Deploy_Pro: $IMAGE_NAME"-->Deployed->Production"
+    SMS_MESSAGE_Deploy_Dev: $IMAGE_NAME-->Deployed->Develop
+    SMS_MESSAGE_Deploy_Stg: $IMAGE_NAME-->Deployed->Stage
+    SMS_MESSAGE_Deploy_Pro: $IMAGE_NAME-->Deployed->Production
     REGISTRY_HOST: $DOCKER_PRIVATE_REGISTRY_IP:$DOCKER_PRIVATE_REGISTRY_PORT
     NAMESPACE_Dev: dev-marketer
     NAMESPACE_Stg: stg-marketer
