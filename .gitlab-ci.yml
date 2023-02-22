@@ -1,8 +1,8 @@
 variables:
     IMAGE_NAME: marketer-api
     IMAGE_TAG_dev: $CI_PIPELINE_ID
-    IMAGE_TAG: $CI_PIPELINE_ID #$CI_COMMIT_TAG
-    SMS_MESSAGE_BUILD: "idp-v2-backend-->Build-OK"
+    IMAGE_TAG: $CI_COMMIT_TAG #$CI_PIPELINE_ID 
+    SMS_MESSAGE_BUILD: $IMAGE_NAME-->Build-OK
     SMS_MESSAGE_Deploy_Dev: $IMAGE_NAME-->Deployed->Develop
     SMS_MESSAGE_Deploy_Stg: $IMAGE_NAME-->Deployed->Stage
     SMS_MESSAGE_Deploy_Pro: $IMAGE_NAME-->Deployed->Production
@@ -177,4 +177,3 @@ deploy-pro-SMS:
     - job: deploy-pro
   only:
     - main
-
