@@ -1,10 +1,14 @@
+"""_summary_
+
+Returns:
+    _type_: _description_
+"""
+from datetime import datetime, timedelta
 from fastapi import APIRouter, Depends, Request
 from schemas import UserTotalVolumeIn, UsersTotalPureIn
 from database import get_database
 from tools import peek, to_gregorian_
 from tokens import JWTBearer, get_sub
-from datetime import datetime, timedelta
-
 
 volume_and_fee_router = APIRouter(prefix='/volume-and-fee', tags=['Volume and Fee'])
 
@@ -12,8 +16,16 @@ volume_and_fee_router = APIRouter(prefix='/volume-and-fee', tags=['Volume and Fe
 @volume_and_fee_router.get("/user-total/", dependencies=[Depends(JWTBearer())])
 async def get_user_total_trades(request: Request,
                                 args: UserTotalVolumeIn = Depends(UserTotalVolumeIn)):
-    brokerage = get_database()
+    """_summary_
 
+    Args:
+        request (Request): _description_
+        args (UserTotalVolumeIn, optional): _description_. Defaults to Depends(UserTotalVolumeIn).
+
+    Returns:
+        _type_: _description_
+    """
+    brokerage = get_database()
     trades_coll = brokerage["trades"]
 
     # transform date from Gregorian to Jalali calendar
@@ -132,6 +144,15 @@ async def get_user_total_trades(request: Request,
 
 @volume_and_fee_router.get("/marketer-total", dependencies=[Depends(JWTBearer())])
 def get_marketer_total_trades(request: Request, args: UsersTotalPureIn = Depends(UsersTotalPureIn)):
+    """_summary_
+
+    Args:
+        request (Request): _description_
+        args (UsersTotalPureIn, optional): _description_. Defaults to Depends(UsersTotalPureIn).
+
+    Returns:
+        _type_: _description_
+    """
     # get user id
     marketer_id = get_sub(request)
     brokerage = get_database()
@@ -271,6 +292,14 @@ def get_marketer_total_trades(request: Request, args: UsersTotalPureIn = Depends
 
 @volume_and_fee_router.get("/users-list-by-volume", dependencies=[Depends(JWTBearer())])
 def users_list_by_volume(request: Request):
+    """_summary_
+
+    Args:
+        request (Request): _description_
+
+    Returns:
+        _type_: _description_
+    """
     # get user id
     marketer_id = get_sub(request)
     brokerage = get_database()

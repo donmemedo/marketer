@@ -1,3 +1,8 @@
+"""_summary_
+
+Returns:
+    _type_: _description_
+"""
 from datetime import timedelta, datetime
 from fastapi import Depends, APIRouter, Request
 from fastapi_pagination import Page, add_pagination
@@ -8,39 +13,49 @@ from tokens import JWTBearer, get_sub
 from schemas import CostIn, MarketerInvitationOut, MarketerInvitationIn, MarketerIdpIdIn
 from tools import to_gregorian_, peek
 
-
 plan_router = APIRouter(prefix='/marketer', tags=['Marketer'])
 
 
 @plan_router.get("/profile/", dependencies=[Depends(JWTBearer())])
 async def get_marketer_profile(request: Request):
+    """_summary_
+
+    Args:
+        request (Request): _description_
+
+    Returns:
+        _type_: _description_
+    """
     marketer_id = get_sub(request)
     brokerage = get_database()
-
     marketers_coll = brokerage["marketers"]
-
     # check if marketer exists and return his name
     query_result = marketers_coll.find({"IdpId": marketer_id})
-
     marketer_dict = next(query_result, None)
-
     return marketer_entity(marketer_dict)
 
 
 @plan_router.get("/cost/", dependencies=[Depends(JWTBearer())])
 async def cal_marketer_cost(request: Request, args: CostIn = Depends(CostIn)):
+    """_summary_
+
+    Args:
+        request (Request): _description_
+        args (CostIn, optional): _description_. Defaults to Depends(CostIn).
+
+    Returns:
+        _type_: _description_
+    """
 
     # get user id
     marketer_id = get_sub(request)
     brokerage = get_database()
-
     customers_coll = brokerage["customers"]
     trades_coll = brokerage["trades"]
     marketers_coll = brokerage["marketers"]
 
     # check if marketer exists and return his name
     query_result = marketers_coll.find({"IdpId": marketer_id})
-
     marketer_dict = peek(query_result)
 
     # Check if customer exist
@@ -53,7 +68,6 @@ async def cal_marketer_cost(request: Request, args: CostIn = Depends(CostIn)):
 
     customers_records = customers_coll.find(query, fields)
     trade_codes = [c.get('PAMCode') for c in customers_records]
-
     from_gregorian_date = to_gregorian_(args.from_date)
     to_gregorian_date = to_gregorian_(args.to_date)
     to_gregorian_date = datetime.strptime(to_gregorian_date, "%Y-%m-%d") + timedelta(days=1)
@@ -218,14 +232,23 @@ async def cal_marketer_cost(request: Request, args: CostIn = Depends(CostIn)):
 
 @plan_router.put("/set-invitation-link")
 async def set_marketer_invitation_link(args: MarketerInvitationIn = Depends(MarketerInvitationIn)):
+    """_summary_
+
+    Args:
+        args (MarketerInvitationIn, optional):
+         _description_. Defaults to Depends(MarketerInvitationIn).
+
+    Returns:
+        _type_: _description_
+    """
     brokerage = get_database()
     marketers_coll = brokerage["marketers"]
 
-    filter = {"Id": args.id}
+    smil_filter = {"Id": args.id}
     update = {"$set": {"InvitationLink": args.invitation_link}}
 
-    marketers_coll.update_one(filter, update)
-    query_result = marketers_coll.find(filter)
+    marketers_coll.update_one(smil_filter, update)
+    query_result = marketers_coll.find(smil_filter)
     marketer_dict = next(query_result, None)
 
     return marketer_entity(marketer_dict)
@@ -233,14 +256,22 @@ async def set_marketer_invitation_link(args: MarketerInvitationIn = Depends(Mark
 
 @plan_router.put("/set-idp-id")
 async def set_marketer_idpid(args: MarketerIdpIdIn = Depends(MarketerIdpIdIn)):
+    """_summary_
+
+    Args:
+        args (MarketerIdpIdIn, optional): _description_. Defaults to Depends(MarketerIdpIdIn).
+
+    Returns:
+        _type_: _description_
+    """
     brokerage = get_database()
     marketers_coll = brokerage["marketers"]
 
-    filter = {"Id": args.id}
+    smi_filter = {"Id": args.id}
     update = {"$set": {"IdpId": args.idpid}}
 
-    marketers_coll.update_one(filter, update)
-    query_result = marketers_coll.find(filter)
+    marketers_coll.update_one(smi_filter, update)
+    query_result = marketers_coll.find(smi_filter)
     marketer_dict = next(query_result, None)
 
     return marketer_entity(marketer_dict)
@@ -248,6 +279,11 @@ async def set_marketer_idpid(args: MarketerIdpIdIn = Depends(MarketerIdpIdIn)):
 
 @plan_router.get("/list-all-marketers/", response_model=Page[MarketerInvitationOut])
 async def list_all_marketers():
+    """_summary_
+
+    Returns:
+        _type_: _description_
+    """
     brokerage = get_database()
     marketers_coll = brokerage["marketers"]
 

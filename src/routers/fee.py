@@ -1,3 +1,8 @@
+"""_summary_
+
+Returns:
+    _type_: _description_
+"""
 from fastapi import Depends, APIRouter, Request
 from database import get_database
 from tools import to_gregorian, peek
@@ -11,6 +16,15 @@ fee_router = APIRouter(prefix='/fee', tags=['fee'])
 
 @fee_router.get("/user", dependencies=[Depends(JWTBearer())])
 async def get_user_fee(request: Request, args: UserFee = Depends(UserFee)):
+    """_summary_
+
+    Args:
+        request (Request): _description_
+        args (UserFee, optional): _description_. Defaults to Depends(UserFee).
+
+    Returns:
+        _type_: _description_
+    """
     # get user id
     marketer_id = get_sub(request)
     brokerage = get_database()

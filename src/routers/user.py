@@ -1,3 +1,8 @@
+"""_summary_
+
+Returns:
+    _type_: _description_
+"""
 from fastapi import APIRouter, Depends, Request
 from fastapi_pagination import Page, add_pagination
 from fastapi_pagination.ext.pymongo import paginate
@@ -6,17 +11,22 @@ from schemas import UserIn, UserOut
 from database import get_database
 from tokens import JWTBearer, get_sub
 
-
 user_router = APIRouter(prefix='/user', tags=['User'])
 
 
 @user_router.get("/list/", dependencies=[Depends(JWTBearer())], response_model=Page[UserOut])
 async def search_marketer_user(request: Request):
+    """_summary_
+
+    Args:
+        request (Request): _description_
+
+    Returns:
+        _type_: _description_
+    """
     # get user id
     marketer_id = get_sub(request)
-
     brokerage = get_database()
-
     customer_coll = brokerage["customers"]
     marketers_coll = brokerage["marketers"]
 
@@ -30,6 +40,15 @@ async def search_marketer_user(request: Request):
 
 @user_router.get("/profile/", dependencies=[Depends(JWTBearer())], response_model=Page[UserOut])
 async def get_user_profile(request: Request, args: UserIn = Depends(UserIn)):
+    """_summary_
+
+    Args:
+        request (Request): _description_
+        args (UserIn, optional): _description_. Defaults to Depends(UserIn).
+
+    Returns:
+        _type_: _description_
+    """
     # get user id
     marketer_id = get_sub(request)
     brokerage = get_database()
