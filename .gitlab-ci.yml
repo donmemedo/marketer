@@ -173,4 +173,3 @@ deploy-pro-SMS:
     - job: deploy-pro
   only:
     - main
-    - tags
