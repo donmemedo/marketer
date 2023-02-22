@@ -161,7 +161,7 @@ deploy-pro:
   retry: 2
   only:
     - main
-    - tag
+    - tags
   when: manual
 
 deploy-pro-SMS:
