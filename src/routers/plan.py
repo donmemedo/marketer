@@ -191,42 +191,59 @@ async def cal_marketer_cost(request: Request, args: CostIn = Depends(CostIn)):
         "almas": {"start": 40000000000, "marketer_share": .4}
     }
 
-    x1 = marketer_total.get("TotalFee") * .65
-    x2 = 0
+    # pure_fee = marketer_total.get("TotalFee") * .65
+    pure_fee = marketer_total.get("TotalFee") * .65
+    marketer_fee = 0
     if marketer_plans["payeh"]["start"] <= marketer_total.get("TotalPureVolume") < marketer_plans["payeh"]["end"]:
-        x2 = marketer_total.get("TotalFee") * marketer_plans["payeh"]["marketer_share"]
+        # marketer_fee = marketer_total.get("TotalFee") * marketer_plans["payeh"]["marketer_share"]
+        marketer_fee = pure_fee * marketer_plans["payeh"]["marketer_share"]
     elif marketer_plans["morvarid"]["start"] <= marketer_total.get("TotalPureVolume") < marketer_plans["morvarid"]["end"]:
-        x2 = marketer_total.get("TotalFee") * marketer_plans["payeh"]["marketer_share"]
+        # marketer_fee = marketer_total.get("TotalFee") * marketer_plans["morvarid"]["marketer_share"]
+        marketer_fee = pure_fee * marketer_plans["morvarid"]["marketer_share"]
     elif marketer_plans["firouzeh"]["start"] <= marketer_total.get("TotalPureVolume") < marketer_plans["firouzeh"]["end"]:
-        x2 = marketer_total.get("TotalFee") * marketer_plans["payeh"]["marketer_share"]
+        # marketer_fee = marketer_total.get("TotalFee") * marketer_plans["firouzeh"]["marketer_share"]
+        marketer_fee = pure_fee * marketer_plans["firouzeh"]["marketer_share"]
     elif marketer_plans["aghigh"]["start"] <= marketer_total.get("TotalPureVolume") < marketer_plans["aghigh"]["end"]:
-        x2 = marketer_total.get("TotalFee") * marketer_plans["payeh"]["marketer_share"]
+        # marketer_fee = marketer_total.get("TotalFee") * marketer_plans["aghigh"]["marketer_share"]
+        marketer_fee = pure_fee * marketer_plans["aghigh"]["marketer_share"]
     elif marketer_plans["yaghout"]["start"] <= marketer_total.get("TotalPureVolume") < marketer_plans["yaghout"]["end"]:
-        x2 = marketer_total.get("TotalFee") * marketer_plans["payeh"]["marketer_share"]
+        # marketer_fee = marketer_total.get("TotalFee") * marketer_plans["yaghout"]["marketer_share"]
+        marketer_fee = pure_fee * marketer_plans["yaghout"]["marketer_share"]
     elif marketer_plans["zomorod"]["start"] <= marketer_total.get("TotalPureVolume") < marketer_plans["zomorod"]["end"]:
-        x2 = marketer_total.get("TotalFee") * marketer_plans["payeh"]["marketer_share"]
+        # marketer_fee = marketer_total.get("TotalFee") * marketer_plans["zomorod"]["marketer_share"]
+        marketer_fee = pure_fee * marketer_plans["zomorod"]["marketer_share"]
     elif marketer_plans["tala"]["start"] <= marketer_total.get("TotalPureVolume") < marketer_plans["tala"]["end"]:
-        x2 = marketer_total.get("TotalFee") * marketer_plans["payeh"]["marketer_share"]
+        # marketer_fee = marketer_total.get("TotalFee") * marketer_plans["tala"]["marketer_share"]
+        marketer_fee = pure_fee * marketer_plans["tala"]["marketer_share"]
     elif marketer_plans["almas"]["start"] <= marketer_total.get("TotalPureVolume"):
-        x2 = marketer_total.get("TotalFee") * marketer_plans["payeh"]["marketer_share"]
+        # marketer_fee = marketer_total.get("TotalFee") * marketer_plans["almas"]["marketer_share"]
+        marketer_fee = pure_fee * marketer_plans["almas"]["marketer_share"]
 
-    x3 = x1 + x2
+    # final_fee = pure_fee + marketer_fee
+    final_fee = marketer_fee
 
     if args.salary != 0:
-        x3 -= args.salary
-
+        final_fee -= args.salary
         if args.insurance != 0:
-            x3 -= args.insurance
+            final_fee -= args.insurance
 
     if args.tax != 0:
-        x3 -= args.tax
+        # final_fee -= args.tax
+        final_fee -= final_fee * args.tax
 
-    if args.collateral !=0:
-        x3 -= args.tax
+    if args.collateral != 0:
+        # final_fee -= args.tax
+        collateral = final_fee * args.collateral
+        #ToDo: collateral will be paid 2 months later, so it must be saved in DB.
+        final_fee -= collateral
+
+    if args.tax == 0 and args.collateral == 0:
+        # final_fee -= args.tax
+        final_fee -= final_fee * 0.15
 
     return {
-        "PureFee": x1, 
-        "FinalFee": x3
+        "PureFee": pure_fee, 
+        "FinalFee": final_fee
         }
 
 
