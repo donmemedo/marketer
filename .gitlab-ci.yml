@@ -133,7 +133,6 @@ deploy-staging:
     - stg
 
 
-
 deploy-stg-SMS:
   stage: Notifications
   image: $REGISTRY_HOST/repository/tech1a-docker-registry/curlimages/curl
