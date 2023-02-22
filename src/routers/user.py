@@ -1,10 +1,10 @@
 from fastapi import APIRouter, Depends, Request
+from fastapi_pagination import Page, add_pagination
+from fastapi_pagination.ext.pymongo import paginate
 from tools import peek
 from schemas import UserIn, UserOut
 from database import get_database
 from tokens import JWTBearer, get_sub
-from fastapi_pagination import Page, add_pagination 
-from fastapi_pagination.ext.pymongo import paginate
 
 
 user_router = APIRouter(prefix='/user', tags=['User'])
@@ -15,10 +15,10 @@ async def search_marketer_user(request: Request):
     # get user id
     marketer_id = get_sub(request)
 
-    db = get_database()
+    brokerage = get_database()
 
-    customer_coll = db["customers"]
-    marketers_coll = db["marketers"]
+    customer_coll = brokerage["customers"]
+    marketers_coll = brokerage["marketers"]
 
     # check if marketer exists and return his name
     query_result = marketers_coll.find({"IdpId": marketer_id})
@@ -32,10 +32,10 @@ async def search_marketer_user(request: Request):
 async def get_user_profile(request: Request, args: UserIn = Depends(UserIn)):
     # get user id
     marketer_id = get_sub(request)
-    db = get_database()
+    brokerage = get_database()
 
-    customer_coll = db["customers"]
-    marketers_coll = db["marketers"]
+    customer_coll = brokerage["customers"]
+    marketers_coll = brokerage["marketers"]
 
     # check if marketer exists and return his name
     query_result = marketers_coll.find({"IdpId": marketer_id})
@@ -45,9 +45,9 @@ async def get_user_profile(request: Request, args: UserIn = Depends(UserIn)):
     marketer_fullname = marketer_dict.get("FirstName") + " " + marketer_dict.get("LastName")
 
     query = {"$and": [
-        {"Referer": marketer_fullname}, 
-        {"FirstName": {"$regex": args.first_name}}, 
-        {"LastName": {"$regex": args.last_name}} 
+        {"Referer": marketer_fullname},
+        {"FirstName": {"$regex": args.first_name}},
+        {"LastName": {"$regex": args.last_name}}
         ]
     }
 

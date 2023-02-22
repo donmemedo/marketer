@@ -1,5 +1,5 @@
-from khayyam import JalaliDatetime
 from datetime import date
+from khayyam import JalaliDatetime
 
 
 def remove_id(items: list):
@@ -34,5 +34,4 @@ def peek(iterable):
         first = next(iterable)
     except StopIteration:
         return None
-    
     return first

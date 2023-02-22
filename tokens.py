@@ -1,8 +1,8 @@
 import jwt
 from fastapi import Request, HTTPException
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
-
-from jwksutils import rsa_pem_from_jwk  # <-- this module contains the piece of code described previously
+# This module contains the piece of code described previously
+from jwksutils import rsa_pem_from_jwk
 
 # obtain jwks as you wish: configuration file, HTTP GET request to the endpoint returning them;
 jwks = {
@@ -31,8 +31,10 @@ jwks = {
 }
 
 # configuration, these can be seen in valid JWTs from Azure B2C:
-valid_audiences = ['d7f48c21-2a19-4bdb-ace8-48928bff0eb5'] # id of the application prepared previously
-issuer = 'https://cluster.tech1a.co' # iss
+# id of the application prepared previously
+valid_audiences = ['d7f48c21-2a19-4bdb-ace8-48928bff0eb5']
+# iss
+issuer = 'https://cluster.tech1a.co'
 
 
 class InvalidAuthorizationToken(Exception):
@@ -75,12 +77,9 @@ def validate_jwt(jwt_to_validate):
     # do what you wish with decoded token:
     # if we get here, the JWT is validated
         return True
-    except Exception as e:
+    except Exception as error:
         print("Wrong JWT")
         return False
-    
-
-
 
 
 class JWTBearer(HTTPBearer):
@@ -95,19 +94,18 @@ class JWTBearer(HTTPBearer):
             if not self.verify_jwt(credentials.credentials):
                 raise HTTPException(status_code=403, detail="Invalid token or expired token.")
             return credentials.credentials
-        else:
-            raise HTTPException(status_code=403, detail="Invalid authorization code.")
+        raise HTTPException(status_code=403, detail="Invalid authorization code.")
 
     def verify_jwt(self, jwtoken: str) -> bool:
-        isTokenValid: bool = False
+        is_token_valid: bool = False
 
         try:
             payload = validate_jwt(jwtoken)
         except:
             payload = None
         if payload:
-            isTokenValid = True
-        return isTokenValid
+            is_token_valid = True
+        return is_token_valid
 
 
 def get_sub(req: Request):
@@ -118,6 +116,5 @@ def get_sub(req: Request):
                          public_key,
                          verify=True,
                          algorithms=['RS256'],
-                         issuer=issuer) 
-    
+                         issuer=issuer)
     return decoded.get('sub')

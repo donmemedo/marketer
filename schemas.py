@@ -1,9 +1,10 @@
-from fastapi import Query
 from dataclasses import dataclass
 from datetime import date
-from khayyam import *
-from pydantic import BaseModel
 from typing import Optional
+from fastapi import Query
+# from khayyam import *
+from khayyam import JalaliDatetime
+from pydantic import BaseModel
 
 
 current_date = JalaliDatetime.today().replace(day=1).strftime("%Y-%m-%d")
