@@ -162,3 +162,55 @@ class MarketerInvitationOut(BaseModel):
     ModifiedBy: Optional[str]
     ModifiedDate: Optional[str]
     InvitationLink: Optional[str] = ...
+
+@dataclass
+class SubUserIn:
+    """_summary_
+    """
+    first_name: str = Query("")
+    last_name: str = Query("")
+    marketer_name: str = Query("")
+    register_date: str = Query("")
+    phone: str = Query("")
+    mobile: str = Query("")
+    user_id: str = Query("")
+    username: str = Query("")
+    page_size: int = Query(5)
+    page_index: int = Query(0)
+
+
+class SubUserOut(BaseModel):
+    """_summary_
+
+    Args:
+        BaseModel (_type_): _description_
+    """
+    FirstName: Optional[str]
+    LastName: Optional[str]
+    Referer: Optional[str]
+    Username: Optional[str]
+    Address: Optional[str]
+    BankAccountNumber: Optional[str]
+    AddressCity: Optional[str]
+    FatherName: Optional[str]
+    Email: Optional[str]
+    BirthDate: Optional[str]
+    IDSerial: Optional[str]
+    BirthCertificateCity: Optional[str]
+    BankName: Optional[str]
+    IsInCreditContractTrading: Optional[str]
+    PostalCode: Optional[str]
+    BrokerBranchId: Optional[str]
+    BrokerBranch: Optional[str]
+    IDNumber: Optional[str]
+    RegisterDate: Optional[str]
+    ID: Optional[str]
+    BankBranchName: Optional[str]
+    Mobile: Optional[str]
+    BankId: Optional[str]
+    ModifiedDate: Optional[str]
+    DetailLedgerCode: Optional[str]
+    Phone: Optional[str]
+    BourseCode: Optional[str]
+    PAMCode: Optional[str]
+    NationalCode: Optional[str]
