@@ -7,14 +7,14 @@ from fastapi import APIRouter, Depends, Request
 from fastapi_pagination import Page, add_pagination
 from fastapi_pagination.ext.pymongo import paginate
 from tools import peek
-from schemas import SubUserIn, SubUserOut
+from schemas import SubUserIn, SubUserOut, MarketerOut
 from database import get_database
 from tokens import JWTBearer, get_sub
 
 sub_user_router = APIRouter(prefix='/subuser', tags=['Sub User'])
 
 
-@sub_user_router.get("/list/", dependencies=[Depends(JWTBearer())], response_model=Page[SubUserOut])
+@sub_user_router.get("/list/", dependencies=[Depends(JWTBearer())], response_model=Page[MarketerOut])
 async def search_marketer_user(request: Request):
     """_summary_
 
@@ -35,7 +35,8 @@ async def search_marketer_user(request: Request):
     marketer_dict = peek(query_result)
     marketer_fullname = marketer_dict.get("FirstName") + " " + marketer_dict.get("LastName")
 
-    return paginate(customer_coll, {"Referer": marketer_fullname}, sort=[("RegisterDate", -1)])
+    # return paginate(customer_coll, {"Referer": marketer_fullname}, sort=[("RegisterDate", -1)])
+    return paginate(marketers_coll,sort=[("CreateDate", -1)])
 
 
 @sub_user_router.get("/profile/", dependencies=[Depends(JWTBearer())], response_model=Page[SubUserOut])

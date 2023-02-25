@@ -169,7 +169,7 @@ class SubUserIn:
     """
     first_name: str = Query("")
     last_name: str = Query("")
-    marketer_name: str = Query("")
+    # marketer_name: str = Query("")
     register_date: str = Query("")
     phone: str = Query("")
     mobile: str = Query("")
@@ -214,3 +214,39 @@ class SubUserOut(BaseModel):
     BourseCode: Optional[str]
     PAMCode: Optional[str]
     NationalCode: Optional[str]
+@dataclass
+class MarketerIn:
+    """_summary_
+    """
+    first_name: str = Query("")
+    last_name: str = Query("")
+    # marketer_name: str = Query("")
+    register_date: str = Query("")
+    phone: str = Query("")
+    mobile: str = Query("")
+    user_id: str = Query("")
+    username: str = Query("")
+    page_size: int = Query(5)
+    page_index: int = Query(0)
+
+
+class MarketerOut(BaseModel):
+    """_summary_
+
+    Args:
+        BaseModel (_type_): _description_
+    """
+    FirstName: Optional[str]
+    LastName: Optional[str]
+    CreateDate: Optional[str]
+    CustomerType: Optional[str]
+    IsOrganization: Optional[str]
+    CreatedBy: Optional[str]
+    InvitationLink: Optional[str]
+    RefererType: Optional[str]
+    IsEmployee: Optional[str]
+    ID: Optional[str]
+    IsCustomer: Optional[str]
+    IdpId: Optional[str]
+    ModifiedBy: Optional[str]
+    ModifiedDate: Optional[str]

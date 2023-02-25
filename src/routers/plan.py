@@ -53,6 +53,7 @@ async def cal_marketer_cost(request: Request, args: CostIn = Depends(CostIn)):
     customers_coll = brokerage["customers"]
     trades_coll = brokerage["trades"]
     marketers_coll = brokerage["marketers"]
+    factor_coll = brokerage["factor"]
 
     # check if marketer exists and return his name
     query_result = marketers_coll.find({"IdpId": marketer_id})
@@ -250,7 +251,26 @@ async def cal_marketer_cost(request: Request, args: CostIn = Depends(CostIn)):
         collateral = final_fee * 0.05
         tax = final_fee * 0.1
         final_fee -= final_fee * 0.15
-
+    two_months_ago_coll = 0
+    try:
+        factor_coll.insert_one(
+            {"MarketerID": marketer_dict['IdpId'], "ThisMonth": datetime.today().month,"ThisM_Collateral": collateral, "ThisM_FinalFee": final_fee,
+             "LastM_Collateral": "0", "LastM_FinalFee": "0", "2LastM_Collateral": "0", "2LastM_FinalFee": "0"})
+    except:
+        if datetime.today().month > factor_coll.find_one({"MarketerID": marketer_dict['IdpId']})["ThisMonth"]:
+            this_month_coll = factor_coll.find_one({"MarketerID": marketer_dict['IdpId']})["ThisM_Collateral"]
+            one_month_ago_coll = factor_coll.find_one({"MarketerID": marketer_dict['IdpId']})["LastM_Collateral"]
+            this_month_fee = factor_coll.find_one({"MarketerID": marketer_dict['IdpId']})["ThisM_FinalFee"]
+            one_month_ago_fee = factor_coll.find_one({"MarketerID": marketer_dict['IdpId']})["LastM_FinalFee"]
+            two_months_ago_coll = factor_coll.find_one({"MarketerID": marketer_dict['IdpId']})["2LastM_Collateral"]
+            factor_coll.update_one(
+                {"MarketerID": marketer_dict['IdpId']},
+                {"$set":
+                     {"ThisM_Collateral": collateral, "ThisM_FinalFee": final_fee, "LastM_Collateral": this_month_coll,
+                      "LastM_FinalFee": this_month_fee, "2LastM_Collateral": one_month_ago_coll,
+                      "2LastM_FinalFee": one_month_ago_fee}
+                 }
+            )
 
     return {
         "TotalFee": marketer_total.get("TotalFee"),
@@ -259,7 +279,9 @@ async def cal_marketer_cost(request: Request, args: CostIn = Depends(CostIn)):
         "Plan": plan,
         "Tax": tax,
         "Collateral": collateral,
-        "FinalFee": final_fee
+        "FinalFee": final_fee,
+        "CollateralOfTwoMonthAgo": two_months_ago_coll,
+        "Payment": final_fee + float(two_months_ago_coll)
         }
 
 
