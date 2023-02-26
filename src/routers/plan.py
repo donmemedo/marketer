@@ -4,6 +4,7 @@ Returns:
     _type_: _description_
 """
 from datetime import timedelta, datetime
+from khayyam import JalaliDatetime as jd
 from fastapi import Depends, APIRouter, Request
 from fastapi_pagination import Page, add_pagination
 from fastapi_pagination.ext.pymongo import paginate
@@ -182,49 +183,42 @@ async def cal_marketer_cost(request: Request, args: CostIn = Depends(CostIn)):
 
     # find marketer's plan
     marketer_plans = {
-        "payeh": {"start": 0, "end": 3000000000, "marketer_share": .05},
-        "morvarid": {"start": 3000000000, "end": 5000000000, "marketer_share": .1},
-        "firouzeh": {"start": 5000000000, "end": 10000000000, "marketer_share": .15},
-        "aghigh": {"start": 10000000000, "end": 15000000000, "marketer_share": .2},
-        "yaghout": {"start": 15000000000, "end": 20000000000, "marketer_share": .25},
-        "zomorod": {"start": 20000000000, "end": 25000000000, "marketer_share": .3},
-        "tala": {"start": 25000000000, "end": 40000000000, "marketer_share": .35},
-        "almas": {"start": 40000000000, "marketer_share": .4}
+        "payeh": {"start": 0, "end": 30000000000, "marketer_share": .05},
+        "morvarid": {"start": 30000000000, "end": 50000000000, "marketer_share": .1},
+        "firouzeh": {"start": 50000000000, "end": 100000000000, "marketer_share": .15},
+        "aghigh": {"start": 100000000000, "end": 150000000000, "marketer_share": .2},
+        "yaghout": {"start": 150000000000, "end": 200000000000, "marketer_share": .25},
+        "zomorod": {"start": 200000000000, "end": 300000000000, "marketer_share": .3},
+        "tala": {"start": 300000000000, "end": 400000000000, "marketer_share": .35},
+        "almas": {"start": 400000000000, "marketer_share": .4}
     }
 
     # pure_fee = marketer_total.get("TotalFee") * .65
     pure_fee = marketer_total.get("TotalFee") * .65
     marketer_fee = 0
-    if marketer_plans["payeh"]["start"] <= marketer_total.get("TotalPureVolume") < marketer_plans["payeh"]["end"]:
-        # marketer_fee = marketer_total.get("TotalFee") * marketer_plans["payeh"]["marketer_share"]
+    tpv = marketer_total.get("TotalPureVolume")
+    if marketer_plans["payeh"]["start"] <= tpv < marketer_plans["payeh"]["end"]:
         marketer_fee = pure_fee * marketer_plans["payeh"]["marketer_share"]
         plan = "Payeh"
-    elif marketer_plans["morvarid"]["start"] <= marketer_total.get("TotalPureVolume") < marketer_plans["morvarid"]["end"]:
-        # marketer_fee = marketer_total.get("TotalFee") * marketer_plans["morvarid"]["marketer_share"]
+    elif marketer_plans["morvarid"]["start"] <= tpv < marketer_plans["morvarid"]["end"]:
         marketer_fee = pure_fee * marketer_plans["morvarid"]["marketer_share"]
         plan = "Morvarid"
-    elif marketer_plans["firouzeh"]["start"] <= marketer_total.get("TotalPureVolume") < marketer_plans["firouzeh"]["end"]:
-        # marketer_fee = marketer_total.get("TotalFee") * marketer_plans["firouzeh"]["marketer_share"]
+    elif marketer_plans["firouzeh"]["start"] <= tpv < marketer_plans["firouzeh"]["end"]:
         marketer_fee = pure_fee * marketer_plans["firouzeh"]["marketer_share"]
         plan = "Firouzeh"
-    elif marketer_plans["aghigh"]["start"] <= marketer_total.get("TotalPureVolume") < marketer_plans["aghigh"]["end"]:
-        # marketer_fee = marketer_total.get("TotalFee") * marketer_plans["aghigh"]["marketer_share"]
+    elif marketer_plans["aghigh"]["start"] <= tpv < marketer_plans["aghigh"]["end"]:
         marketer_fee = pure_fee * marketer_plans["aghigh"]["marketer_share"]
         plan = "Aghigh"
-    elif marketer_plans["yaghout"]["start"] <= marketer_total.get("TotalPureVolume") < marketer_plans["yaghout"]["end"]:
-        # marketer_fee = marketer_total.get("TotalFee") * marketer_plans["yaghout"]["marketer_share"]
+    elif marketer_plans["yaghout"]["start"] <= tpv < marketer_plans["yaghout"]["end"]:
         marketer_fee = pure_fee * marketer_plans["yaghout"]["marketer_share"]
         plan = "Yaghout"
-    elif marketer_plans["zomorod"]["start"] <= marketer_total.get("TotalPureVolume") < marketer_plans["zomorod"]["end"]:
-        # marketer_fee = marketer_total.get("TotalFee") * marketer_plans["zomorod"]["marketer_share"]
+    elif marketer_plans["zomorod"]["start"] <= tpv < marketer_plans["zomorod"]["end"]:
         marketer_fee = pure_fee * marketer_plans["zomorod"]["marketer_share"]
         plan = "Zomorod"
-    elif marketer_plans["tala"]["start"] <= marketer_total.get("TotalPureVolume") < marketer_plans["tala"]["end"]:
-        # marketer_fee = marketer_total.get("TotalFee") * marketer_plans["tala"]["marketer_share"]
+    elif marketer_plans["tala"]["start"] <= tpv < marketer_plans["tala"]["end"]:
         marketer_fee = pure_fee * marketer_plans["tala"]["marketer_share"]
         plan = "Tala"
-    elif marketer_plans["almas"]["start"] <= marketer_total.get("TotalPureVolume"):
-        # marketer_fee = marketer_total.get("TotalFee") * marketer_plans["almas"]["marketer_share"]
+    elif marketer_plans["almas"]["start"] <= tpv:
         marketer_fee = pure_fee * marketer_plans["almas"]["marketer_share"]
         plan = "Almas"
 
@@ -244,7 +238,6 @@ async def cal_marketer_cost(request: Request, args: CostIn = Depends(CostIn)):
     if args.collateral != 0:
         # final_fee -= args.tax
         collateral = final_fee * args.collateral
-        #ToDo: collateral will be paid 2 months later, so it must be saved in DB.
         final_fee -= collateral
     if args.tax == 0 and args.collateral == 0:
         # final_fee -= args.tax
@@ -254,21 +247,39 @@ async def cal_marketer_cost(request: Request, args: CostIn = Depends(CostIn)):
     two_months_ago_coll = 0
     try:
         factor_coll.insert_one(
-            {"MarketerID": marketer_dict['IdpId'], "ThisMonth": datetime.today().month,"ThisM_Collateral": collateral, "ThisM_FinalFee": final_fee,
-             "LastM_Collateral": "0", "LastM_FinalFee": "0", "2LastM_Collateral": "0", "2LastM_FinalFee": "0"})
+            {"MarketerID": marketer_dict['IdpId'], "ThisMonth": jd.today().month,
+             "ThisM_Collateral": collateral, "ThisM_FinalFee": final_fee,
+             "LastM_Collateral": "0", "LastM_FinalFee": "0", "2LastM_Collateral": "0",
+             "2LastM_FinalFee": "0"})
     except:
-        if datetime.today().month > factor_coll.find_one({"MarketerID": marketer_dict['IdpId']})["ThisMonth"]:
-            this_month_coll = factor_coll.find_one({"MarketerID": marketer_dict['IdpId']})["ThisM_Collateral"]
-            one_month_ago_coll = factor_coll.find_one({"MarketerID": marketer_dict['IdpId']})["LastM_Collateral"]
-            this_month_fee = factor_coll.find_one({"MarketerID": marketer_dict['IdpId']})["ThisM_FinalFee"]
-            one_month_ago_fee = factor_coll.find_one({"MarketerID": marketer_dict['IdpId']})["LastM_FinalFee"]
-            two_months_ago_coll = factor_coll.find_one({"MarketerID": marketer_dict['IdpId']})["2LastM_Collateral"]
+        # update database to this month and shift past months
+        if jd.today().month > factor_coll.find_one(
+                {"MarketerID": marketer_dict['IdpId']})["ThisMonth"]:
+            this_month_coll = factor_coll.find_one(
+                {"MarketerID": marketer_dict['IdpId']})["ThisM_Collateral"]
+            one_month_ago_coll = factor_coll.find_one(
+                {"MarketerID": marketer_dict['IdpId']})["LastM_Collateral"]
+            this_month_fee = factor_coll.find_one(
+                {"MarketerID": marketer_dict['IdpId']})["ThisM_FinalFee"]
+            one_month_ago_fee = factor_coll.find_one(
+                {"MarketerID": marketer_dict['IdpId']})["LastM_FinalFee"]
+            two_months_ago_coll = factor_coll.find_one(
+                {"MarketerID": marketer_dict['IdpId']})["2LastM_Collateral"]
             factor_coll.update_one(
                 {"MarketerID": marketer_dict['IdpId']},
                 {"$set":
-                     {"ThisM_Collateral": collateral, "ThisM_FinalFee": final_fee, "LastM_Collateral": this_month_coll,
-                      "LastM_FinalFee": this_month_fee, "2LastM_Collateral": one_month_ago_coll,
-                      "2LastM_FinalFee": one_month_ago_fee}
+                     {"ThisM_Collateral": collateral, "ThisM_FinalFee": final_fee,
+                      "LastM_Collateral": this_month_coll, "LastM_FinalFee": this_month_fee,
+                      "2LastM_Collateral": one_month_ago_coll, "2LastM_FinalFee": one_month_ago_fee}
+                 }
+            )
+        elif args.to_date == str(jd.today().date()) and\
+                args.from_date == str(jd.today().replace(day=1).date()):
+            # just update datas of this month and dont shift past months
+            factor_coll.update_one(
+                {"MarketerID": marketer_dict['IdpId']},
+                {"$set":
+                     {"ThisM_Collateral": collateral, "ThisM_FinalFee": final_fee}
                  }
             )
 
