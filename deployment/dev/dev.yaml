@@ -7,7 +7,7 @@ metadata:
     instance: marketer-api
 data:
   VERSION: "0.0.1"
-  MONGO_CONNECTION_STRING: "mongodb://root:root@mongo-marketer.dev-marketer-db.svc.cluster.local:27017/"
+  MONGO_CONNECTION_STRING: "mongodb://root:root@mongo-marketer-0-external.dev-marketer-db.svc.cluster.local:27017/"
   MONGO_DATABASE: "brokerage"
   SWAGGER_TITLE: "Marketer API"
   API_PREFIX: ""
