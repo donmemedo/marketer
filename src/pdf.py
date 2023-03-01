@@ -8,7 +8,7 @@ from reportlab.pdfbase import pdfmetrics
 from reportlab.pdfbase.ttfonts import TTFont
 from bidi.algorithm import get_display
 import arabic_reshaper
-
+from khayyam import JalaliDatetime as jd
 
 def pdf_maker(args):
 
@@ -52,8 +52,9 @@ def pdf_maker(args):
 
     shobe = args.shobe# "تهران"
     name = args.name# "خواجه زاده"
-    doreh = args.doreh# "بهمن"
-    doreh2 = doreh -2# "آبان"
+    doreh = jd(datetime.strptime(args.doreh, '%Y-%m-%d')).monthname()# "بهمن"
+
+    doreh2 = jd(datetime.strptime(args.doreh, '%Y-%m-%d')).monthname(-2)# "آبان"
     total_fee=args.total_fee
     pure_fee=args.pure_fee
     marketer_fee=args.marketer_fee
@@ -93,7 +94,7 @@ def pdf_maker(args):
     text12 = f"قابل پرداخت {pardakhti}"
     text112 = f" {pardakhti}"
 
-    text13 = f"تاریخ صدور: {datetime.date}"
+    text13 = f"تاریخ صدور: {date}"
     text122 = f" {pardakhti}"
 
 
