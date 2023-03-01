@@ -13,7 +13,7 @@ from database import get_database
 from tokens import JWTBearer, get_sub
 from schemas import CostIn, MarketerInvitationOut, MarketerInvitationIn, MarketerIdpIdIn
 from tools import to_gregorian_, peek
-
+from ..pdf import pdf_maker
 plan_router = APIRouter(prefix='/marketer', tags=['Marketer'])
 
 
@@ -224,27 +224,31 @@ async def cal_marketer_cost(request: Request, args: CostIn = Depends(CostIn)):
 
     # final_fee = pure_fee + marketer_fee
     final_fee = marketer_fee
-
+    salary = 0
+    insurance = 0
     if args.salary != 0:
-        final_fee -= args.salary
+        salary = args.salary * marketer_fee
+        final_fee -= salary
         if args.insurance != 0:
-            final_fee -= args.insurance
+            insurance = args.insurance * marketer_fee
+            final_fee -= insurance
 
     if args.tax != 0:
         # final_fee -= args.tax
-        tax = final_fee * args.tax
+        tax = marketer_fee * args.tax
         final_fee -= tax
 
     if args.collateral != 0:
         # final_fee -= args.tax
-        collateral = final_fee * args.collateral
+        collateral = marketer_fee * args.collateral
         final_fee -= collateral
     if args.tax == 0 and args.collateral == 0:
         # final_fee -= args.tax
-        collateral = final_fee * 0.05
-        tax = final_fee * 0.1
+        collateral = marketer_fee * 0.05
+        tax = marketer_fee * 0.1
         final_fee -= final_fee * 0.15
     two_months_ago_coll = 0
+    
     try:
         factor_coll.insert_one(
             {"MarketerID": marketer_dict['IdpId'], "ThisMonth": jd.today().month,
@@ -282,7 +286,7 @@ async def cal_marketer_cost(request: Request, args: CostIn = Depends(CostIn)):
                      {"ThisM_Collateral": collateral, "ThisM_FinalFee": final_fee}
                  }
             )
-
+    # pdf_maker(shobe="jivhk", name, doreh, doreh2, pardakhti=final_fee + float(two_months_ago_coll), date=to_gregorian_(datetime.today()))
     return {
         "TotalFee": marketer_total.get("TotalFee"),
         "PureFee": pure_fee,
