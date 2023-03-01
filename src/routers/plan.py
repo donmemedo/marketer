@@ -286,7 +286,9 @@ async def cal_marketer_cost(request: Request, args: CostIn = Depends(CostIn)):
                      {"ThisM_Collateral": collateral, "ThisM_FinalFee": final_fee}
                  }
             )
-    # pdf_maker(shobe="jivhk", name, doreh, doreh2, pardakhti=final_fee + float(two_months_ago_coll), date=to_gregorian_(datetime.today()))
+    pdf_maker(shobe="jivhk", name='uu', doreh=datetime.date().month, total_fee= marketer_total.get("TotalFee"),
+              pure_fee=pure_fee, marketer_fee=marketer_fee, tax=tax, colat2=two_months_ago_coll, colat=collateral,
+              mandeh='0', pardakhti=final_fee + float(two_months_ago_coll), date=datetime.today())
     return {
         "TotalFee": marketer_total.get("TotalFee"),
         "PureFee": pure_fee,

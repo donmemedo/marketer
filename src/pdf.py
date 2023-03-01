@@ -1,3 +1,5 @@
+import datetime
+
 from reportlab.lib.styles import getSampleStyleSheet
 from reportlab.lib.pagesizes import letter
 from reportlab.platypus import Paragraph, SimpleDocTemplate, Spacer
@@ -51,40 +53,47 @@ def pdf_maker(args):
     shobe = args.shobe# "تهران"
     name = args.name# "خواجه زاده"
     doreh = args.doreh# "بهمن"
-    doreh2 = args.doreh2# "آبان"
+    doreh2 = doreh -2# "آبان"
+    total_fee=args.total_fee
+    pure_fee=args.pure_fee
+    marketer_fee=args.marketer_fee
+    tax=args.tax
+    colat2 = args.colat2
+    colat = args.colat
+    mandeh=args.mandeh
     pardakhti = args.pardakhti# 1000
     date = args.date#"2023-03-01"
     # date= reversed(date)
     text2 = f"شعبه: {shobe}  نام بازاریاب:{name}  دوره پرداخت: {doreh} 1401"
 
     text31 = f"کارمزد ساخته شده مشتریان در {doreh}"
-    text22 = f" {pardakhti}"
+    text22 = f" {total_fee}"
 
     text41 = f"کارمزد خالص در {doreh}"
-    text32 = f" {pardakhti}"
+    text32 = f" {pure_fee}"
 
     text51 = f"سهم نماینده در {doreh}"
-    text42 = f" {pardakhti}"
+    text42 = f" {marketer_fee}"
 
     text6 = f"اضافه می‌شود:"
     text7 = f"برگشت حسن انجام کار در {doreh2}"
-    text62 = f" {pardakhti}"
+    text62 = f" {colat2}"
 
 
     text8 = f"کسر می‌شود:"
     text9 = f"مانده قبل"
-    text82 = f" {pardakhti}"
+    text82 = f" {mandeh}"
 
     text10 = f"حسن انجام کار {doreh}"
-    text92 = f" {pardakhti}"
+    text92 = f" {colat}"
 
     text11 = f"مالیات سهم نماینده در {doreh}"
-    text102 = f" {pardakhti}"
+    text102 = f" {tax}"
 
     text12 = f"قابل پرداخت {pardakhti}"
     text112 = f" {pardakhti}"
 
-    text13 = f"تاریخ صدور: {date}"
+    text13 = f"تاریخ صدور: {datetime.date}"
     text122 = f" {pardakhti}"
 
 
