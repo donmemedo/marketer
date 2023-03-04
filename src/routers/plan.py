@@ -13,7 +13,8 @@ from database import get_database
 from tokens import JWTBearer, get_sub
 from schemas import CostIn, MarketerInvitationOut, MarketerInvitationIn, MarketerIdpIdIn
 from tools import to_gregorian_, peek
-from ..pdf import pdf_maker
+# from ..pdf import pdf_maker
+from src.pdf import pdf_maker
 plan_router = APIRouter(prefix='/marketer', tags=['Marketer'])
 
 
@@ -287,7 +288,7 @@ async def cal_marketer_cost(request: Request, args: CostIn = Depends(CostIn)):
                  }
             )
 
-    pdf_maker(shobe="jivhk", name='uu', doreh=args.to_date, total_fee= marketer_total.get("TotalFee"),
+    pdf_maker(shobe='تهران', name='عباس خواجه زاده', doreh=args.to_date, total_fee= marketer_total.get("TotalFee"),
               pure_fee=pure_fee, marketer_fee=marketer_fee, tax=tax, colat2=two_months_ago_coll, colat=collateral,
               mandeh='0', pardakhti=final_fee + float(two_months_ago_coll), date=jd.now().strftime('%C'))
     return {

@@ -1,5 +1,3 @@
-import datetime
-
 from reportlab.lib.styles import getSampleStyleSheet
 from reportlab.lib.pagesizes import letter
 from reportlab.platypus import Paragraph, SimpleDocTemplate, Spacer
@@ -10,8 +8,8 @@ from bidi.algorithm import get_display
 import arabic_reshaper
 from khayyam import JalaliDatetime as jd
 
-def pdf_maker(args):
-
+def pdf_maker(shobe='', name='', doreh='', total_fee='', pure_fee='', marketer_fee='', tax='', colat2='', colat='',
+              mandeh='', pardakhti='', date=jd.now().strftime('%C')):
 
     pdfmetrics.registerFont(TTFont("BNazanin", "BNazanin.ttf"))
     styles = getSampleStyleSheet()
@@ -23,7 +21,6 @@ def pdf_maker(args):
         borderPadding=6,
         fontName="BNazanin",
         alignment=2
-        # previously we named our custom font "Arabic"
     )
     left = ParagraphStyle(
         "border",  # border on
@@ -33,7 +30,6 @@ def pdf_maker(args):
         borderPadding=6,
         fontName="BNazanin",
         alignment=0
-        # previously we named our custom font "Arabic"
     )
     cent = ParagraphStyle(
         "border",  # border on
@@ -43,28 +39,12 @@ def pdf_maker(args):
         borderPadding=6,
         fontName="Bnazanin",
         alignment=1
-        # previously we named our custom font "Arabic"
     )
     storys = []
-
-
     text1 = "محاسبات صورتحساب بازاریاب"
-
-    shobe = args.shobe# "تهران"
-    name = args.name# "خواجه زاده"
-    doreh = jd(datetime.strptime(args.doreh, '%Y-%m-%d')).monthname()# "بهمن"
-
-    doreh2 = jd(datetime.strptime(args.doreh, '%Y-%m-%d')).monthname(-2)# "آبان"
-    total_fee=args.total_fee
-    pure_fee=args.pure_fee
-    marketer_fee=args.marketer_fee
-    tax=args.tax
-    colat2 = args.colat2
-    colat = args.colat
-    mandeh=args.mandeh
-    pardakhti = args.pardakhti# 1000
-    date = args.date#"2023-03-01"
-    # date= reversed(date)
+    cc = jd.strptime(doreh, '%Y-%m-%d')
+    doreh = cc.monthname()# "بهمن"
+    doreh2 = cc.replace(month=cc.month - 2).monthname()# "آبان"
     text2 = f"شعبه: {shobe}  نام بازاریاب:{name}  دوره پرداخت: {doreh} 1401"
 
     text31 = f"کارمزد ساخته شده مشتریان در {doreh}"
