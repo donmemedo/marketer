@@ -32,7 +32,8 @@ jwks = {
 
 # configuration, these can be seen in valid JWTs from Azure B2C:
 valid_audiences = ['d7f48c21-2a19-4bdb-ace8-48928bff0eb5'] # id of the application prepared previously
-issuer = 'https://cluster.tech1a.co' # iss
+#issuer = 'https://cluster.tech1a.co' # iss
+issuer = 'https://proidp.tech1a.co' # iss
 
 
 class InvalidAuthorizationToken(Exception):
