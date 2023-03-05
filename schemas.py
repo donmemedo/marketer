@@ -129,6 +129,25 @@ class CostIn:
     from_date: str = Query(current_date)
     to_date: str = Query(current_date)
 
+@dataclass
+class SubCostIn:
+    """_summary_
+    """
+    insurance: int = Query(0)
+    first_name: str = Query("")
+    last_name: str = Query("")
+    # marketer_name: str = Query("")
+    register_date: str = Query("")
+    phone: str = Query("")
+    mobile: str = Query("")
+    user_id: str = Query("")
+    username: str = Query("")
+    tax: int = Query(0)
+    salary: int = Query(0)
+    collateral: int = Query(0)
+    from_date: str = Query(current_date)
+    to_date: str = Query(current_date)
+
 
 @dataclass
 class MarketerInvitationIn():

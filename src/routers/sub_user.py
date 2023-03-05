@@ -7,7 +7,7 @@ from fastapi import APIRouter, Depends, Request
 from fastapi_pagination import Page, add_pagination
 from fastapi_pagination.ext.pymongo import paginate
 # from tools import peek
-from schemas import SubUserIn, SubUserOut, MarketerOut, CostIn
+from schemas import SubUserIn, SubUserOut, MarketerOut, CostIn, SubCostIn
 from database import get_database
 from tokens import JWTBearer, get_sub
 from tools import to_gregorian_, peek
@@ -148,7 +148,7 @@ async def search_user_profile(request: Request, args: SubUserIn = Depends(SubUse
 
 
 @sub_user_router.get("/subuser/cost/", dependencies=[Depends(JWTBearer())])
-async def call_subuser_cost(request: Request, args: CostIn = Depends(CostIn)):
+async def call_subuser_cost(request: Request, args: SubCostIn = Depends(SubCostIn)):
     """_summary_
 
     Args:
@@ -193,7 +193,8 @@ async def call_subuser_cost(request: Request, args: CostIn = Depends(CostIn)):
 
     # Check if customer exist
     query = {"$and": [
-        {"Username": subuser_dict.get("Username")}
+        # {"FirstName": subuser_dict.get("FirstName")}
+        {'FirstName':{'$regex':args.first_name}}
     ]
     }
 
