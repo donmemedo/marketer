@@ -1,4 +1,14 @@
+"""_summary_
+"""
 def marketer_entity(marketer) -> dict:
+    """_summary_
+
+    Args:
+        marketer (_type_): _description_
+
+    Returns:
+        dict: _description_
+    """
     return {
     "Id": marketer.get("Id"),
     "FirstName": marketer.get("FirstName"),
@@ -18,12 +28,28 @@ def marketer_entity(marketer) -> dict:
 
 
 def fee_entity(fee) -> dict:
+    """_summary_
+
+    Args:
+        fee (_type_): _description_
+
+    Returns:
+        dict: _description_
+    """
     return {
         "TotalFee": fee.get("TotalFee")
     }
 
 
 def volume_entity(volume) -> dict:
+    """_summary_
+
+    Args:
+        volume (_type_): _description_
+
+    Returns:
+        dict: _description_
+    """
     return {
         "TotalVolume": volume.get("TotalVolume")
     }
