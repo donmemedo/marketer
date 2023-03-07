@@ -353,10 +353,10 @@ async def set_marketer_idpid(args: MarketerIdpIdIn = Depends(MarketerIdpIdIn)):
 
 @plan_router.get("/list-all-marketers/", response_model=Page[MarketerInvitationOut])
 async def list_all_marketers():
-    """_summary_
+    """List All marketers with their Invitation Link
 
     Returns:
-        _type_: _description_
+        _type_: MarketerInvitationOut
     """
     brokerage = get_database()
     marketers_coll = brokerage["marketers"]
