@@ -16,7 +16,7 @@ user_router = APIRouter(prefix='/user', tags=['User'])
 
 @user_router.get("/list/", dependencies=[Depends(JWTBearer())], response_model=Page[UserOut])
 async def search_marketer_user(request: Request):
-    """_summary_
+    """List Marketer Users
 
     Args:
         request (Request): _description_
@@ -40,7 +40,7 @@ async def search_marketer_user(request: Request):
 
 @user_router.get("/profile/", dependencies=[Depends(JWTBearer())], response_model=Page[UserOut])
 async def get_user_profile(request: Request, args: UserIn = Depends(UserIn)):
-    """_summary_
+    """Searches the Users of Marketer by thier First and Last Name
 
     Args:
         request (Request): _description_
