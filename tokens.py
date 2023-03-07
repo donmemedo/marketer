@@ -31,10 +31,9 @@ jwks = {
 }
 
 # configuration, these can be seen in valid JWTs from Azure B2C:
-# id of the application prepared previously
-valid_audiences = ['d7f48c21-2a19-4bdb-ace8-48928bff0eb5']
-# iss
-issuer = 'https://cluster.tech1a.co'
+valid_audiences = ['d7f48c21-2a19-4bdb-ace8-48928bff0eb5'] # id of the application prepared previously
+#issuer = 'https://cluster.tech1a.co' # iss
+issuer = 'https://proidp.tech1a.co' # iss
 
 
 class InvalidAuthorizationToken(Exception):
@@ -116,5 +115,6 @@ def get_sub(req: Request):
                          public_key,
                          verify=True,
                          algorithms=['RS256'],
-                         issuer=issuer)
+                         issuer=issuer) 
+    
     return decoded.get('sub')
