@@ -180,7 +180,7 @@ async def call_subuser_cost(request: Request, args: SubCostIn = Depends(SubCostI
     marketer_id = get_sub(request)
     brokerage = get_database()
     customers_coll = brokerage["customers"]
-    trades_coll = brokerage["trade3s"]
+    trades_coll = brokerage["trades"]
     #ToDo: Because of having username isn't optional so it will have been changed to IDP or username
     query = {
         # 'Referer': {
@@ -334,7 +334,8 @@ async def call_subuser_cost(request: Request, args: SubCostIn = Depends(SubCostI
 add_pagination(sub_user_router)
 
 
-def buy_pipe(trade_codes,from_gregorian_date,to_gregorian_date):
+def buy_pipe(customers_records,from_gregorian_date,to_gregorian_date):
+    trade_codes = [c.get('PAMCode') for c in customers_records]
     buy_pipeline = [
         {
             "$match": {
@@ -383,7 +384,8 @@ def buy_pipe(trade_codes,from_gregorian_date,to_gregorian_date):
     return buy_pipeline
 
 
-def sell_pipe(trade_codes,from_gregorian_date,to_gregorian_date):
+def sell_pipe(customers_records,from_gregorian_date,to_gregorian_date):
+    trade_codes = [c.get('PAMCode') for c in customers_records]
     sell_pipeline = [
         {
             "$match": {
