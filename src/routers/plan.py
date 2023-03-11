@@ -201,27 +201,35 @@ async def cal_marketer_cost(request: Request, args: CostIn = Depends(CostIn)):
     if marketer_plans["payeh"]["start"] <= tpv < marketer_plans["payeh"]["end"]:
         marketer_fee = pure_fee * marketer_plans["payeh"]["marketer_share"]
         plan = "Payeh"
+        next_plan = marketer_plans["payeh"]["end"] - pure_fee
     elif marketer_plans["morvarid"]["start"] <= tpv < marketer_plans["morvarid"]["end"]:
         marketer_fee = pure_fee * marketer_plans["morvarid"]["marketer_share"]
         plan = "Morvarid"
+        next_plan = marketer_plans["morvarid"]["end"] - pure_fee
     elif marketer_plans["firouzeh"]["start"] <= tpv < marketer_plans["firouzeh"]["end"]:
         marketer_fee = pure_fee * marketer_plans["firouzeh"]["marketer_share"]
         plan = "Firouzeh"
+        next_plan = marketer_plans["firouzeh"]["end"] - pure_fee
     elif marketer_plans["aghigh"]["start"] <= tpv < marketer_plans["aghigh"]["end"]:
         marketer_fee = pure_fee * marketer_plans["aghigh"]["marketer_share"]
         plan = "Aghigh"
+        next_plan = marketer_plans["aghigh"]["end"] - pure_fee
     elif marketer_plans["yaghout"]["start"] <= tpv < marketer_plans["yaghout"]["end"]:
         marketer_fee = pure_fee * marketer_plans["yaghout"]["marketer_share"]
         plan = "Yaghout"
+        next_plan = marketer_plans["yaghout"]["end"] - pure_fee
     elif marketer_plans["zomorod"]["start"] <= tpv < marketer_plans["zomorod"]["end"]:
         marketer_fee = pure_fee * marketer_plans["zomorod"]["marketer_share"]
         plan = "Zomorod"
+        next_plan = marketer_plans["zomorod"]["end"] - pure_fee
     elif marketer_plans["tala"]["start"] <= tpv < marketer_plans["tala"]["end"]:
         marketer_fee = pure_fee * marketer_plans["tala"]["marketer_share"]
         plan = "Tala"
+        next_plan = marketer_plans["tala"]["end"] - pure_fee
     elif marketer_plans["almas"]["start"] <= tpv:
         marketer_fee = pure_fee * marketer_plans["almas"]["marketer_share"]
         plan = "Almas"
+        next_plan = 0
 
     # final_fee = pure_fee + marketer_fee
     final_fee = marketer_fee
@@ -296,6 +304,7 @@ async def cal_marketer_cost(request: Request, args: CostIn = Depends(CostIn)):
         "PureFee": pure_fee,
         "MarketerFee": marketer_fee,
         "Plan": plan,
+        "Next Plan": next_plan,
         "Tax": tax,
         "Collateral": collateral,
         "FinalFee": final_fee,
