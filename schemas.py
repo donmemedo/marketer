@@ -263,3 +263,15 @@ class MarketerOut(BaseModel):
     IdpId: Optional[str]
     ModifiedBy: Optional[str]
     ModifiedDate: Optional[str]
+
+
+@dataclass
+class Pages:
+    size: int = Query(10)
+    page: int = Query(1)
+
+
+@dataclass
+class UsersListIn(Pages):
+    from_date: str = Query(current_date)
+    to_date: str = Query(current_date)
