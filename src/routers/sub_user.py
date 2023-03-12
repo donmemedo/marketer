@@ -107,55 +107,27 @@ async def search_user_profile(request: Request, args: SubUserIn = Depends(SubUse
     # }
     if args.username:
 
-        filter = {
-            'Referer': {
-                '$regex': marketer_fullname
-            },
-            'FirstName': {
-                '$regex': args.first_name
-            },
-            'LastName': {
-                '$regex': args.last_name
-            },
-            'RegisterDate': {
-                '$regex': args.register_date
-            },
-            'Phone': {
-                '$regex': args.phone
-            },
-            'Mobile': {
-                '$regex': args.mobile
-            },
-            'ID': {
-                '$regex': args.user_id
-            },
-            'Username': {
-                '$regex': args.username
-            }
+        filter = {"$and": [
+            {'Referer': {'$regex': marketer_fullname}},
+            {'FirstName': {'$regex': args.first_name}},
+            {'LastName': {'$regex': args.last_name}},
+            {'RegisterDate': {'$regex': args.register_date}},
+            {'Phone': {'$regex': args.phone}},
+            {'Mobile': {'$regex': args.mobile}},
+            {'ID': {'$regex': args.user_id}},
+            {'Username': {'$regex': args.username}}
+            ]
         }
     else:
-        filter = {
-            'Referer': {
-                '$regex': marketer_fullname
-            },
-            'FirstName': {
-                '$regex': args.first_name
-            },
-            'LastName': {
-                '$regex': args.last_name
-            },
-            'RegisterDate': {
-                '$regex': args.register_date
-            },
-            'Phone': {
-                '$regex': args.phone
-            },
-            'Mobile': {
-                '$regex': args.mobile
-            },
-            'ID': {
-                '$regex': args.user_id
-            }
+        filter = {"$and": [
+            {'Referer': {'$regex': marketer_fullname}},
+            {'FirstName': {'$regex': args.first_name}},
+            {'LastName': {'$regex': args.last_name}},
+            {'RegisterDate': {'$regex': args.register_date}},
+            {'Phone': {'$regex': args.phone}},
+            {'Mobile': {'$regex': args.mobile}},
+            {'ID': {'$regex': args.user_id}}
+            ]
         }
 
     sort = list({
