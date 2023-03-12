@@ -316,12 +316,13 @@ async def call_subuser_cost(request: Request, args: SubCostIn = Depends(SubCostI
     if buy_agg_result and sell_agg_result:
         total_buy = buy_agg_result.get("TotalBuy")
         total_sell = sell_agg_result.get("TotalSell")
+        subuser_total["TotalFee"] = \
+        sell_agg_result.get("TotalFee") + buy_agg_result.get("TotalFee")
     else:
         total_buy = 0
         total_sell = 0
     subuser_total["TotalPureVolume"] = total_sell + total_buy
-    subuser_total["TotalFee"] = \
-        sell_agg_result.get("TotalFee") + buy_agg_result.get("TotalFee")
+    
     # tpv = subuser_total.get("TotalPureVolume")
     # pdf_maker(shobe='تهران', name='عباس خواجه زاده', doreh=args.to_date, total_fee=marketer_total.get("TotalFee"),
     #           pure_fee=pure_fee, marketer_fee=marketer_fee, tax=tax, colat2=two_months_ago_coll, colat=collateral,
