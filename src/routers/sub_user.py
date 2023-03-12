@@ -107,7 +107,7 @@ async def search_user_profile(request: Request, args: SubUserIn = Depends(SubUse
     # }
     if args.username:
 
-        filter = {
+        query = {
             'Referer': {
                 '$regex': marketer_fullname
             },
@@ -134,7 +134,7 @@ async def search_user_profile(request: Request, args: SubUserIn = Depends(SubUse
             }
         }
     else:
-        filter = {
+        query = {
             'Referer': {
                 '$regex': marketer_fullname
             },
@@ -157,11 +157,11 @@ async def search_user_profile(request: Request, args: SubUserIn = Depends(SubUse
                 '$regex': args.user_id
             }
         }
-    print(filter)
-    sort = list({
-                    'BirthDate': -1
-                }.items())
-    return paginate(customer_coll, filter, sort=[("RegisterDate", -1)])
+    print(query)
+    # sort = list({
+    #                 'BirthDate': -1
+    #             }.items())
+    return paginate(customer_coll, query, sort=[("RegisterDate", -1)])
 
 
 @sub_user_router.get("/subuser/cost/", dependencies=[Depends(JWTBearer())])
