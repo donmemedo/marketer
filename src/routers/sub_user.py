@@ -108,7 +108,7 @@ async def search_user_profile(request: Request, args: SubUserIn = Depends(SubUse
     if args.username:
 
         filter = {"$and": [
-            {'Referer': {'$regex': marketer_fullname}},
+            {'Referer': marketer_fullname},
             {'FirstName': {'$regex': args.first_name}},
             {'LastName': {'$regex': args.last_name}},
             {'RegisterDate': {'$regex': args.register_date}},
@@ -161,9 +161,7 @@ async def call_subuser_cost(request: Request, args: SubCostIn = Depends(SubCostI
     trades_coll = brokerage["trades"]
     #ToDo: Because of having username isn't optional so it will have been changed to IDP or username
     query = {
-        # 'Referer': {
-        #     '$regex': marketer_fullname
-        # },
+        'Referer': marketer_fullname,
         'FirstName': {
             '$regex': args.first_name
         },
