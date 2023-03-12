@@ -317,3 +317,4 @@ __pycache__/
 deployment
 **/Dockerfile
 tokens.py
+config.py
