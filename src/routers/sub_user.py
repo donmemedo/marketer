@@ -149,6 +149,7 @@ async def search_user_profile(request: Request, args: SubUserIn = Depends(SubUse
             'Mobile': {
                 '$regex': args.mobile
             }
+        }
     # print(query)
     # sort = list({
     #                 'BirthDate': -1
