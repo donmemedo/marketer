@@ -176,7 +176,7 @@ async def call_subuser_cost(request: Request, args: SubCostIn = Depends(SubCostI
     trades_coll = brokerage["trades"]
     #ToDo: Because of having username isn't optional so it will have been changed to IDP or username
     query = {
-        'Referer': marketer_fullname,
+        # 'Referer': marketer_fullname,
         'FirstName': {
             '$regex': args.first_name
         },
