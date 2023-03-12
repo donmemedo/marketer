@@ -120,15 +120,21 @@ async def search_user_profile(request: Request, args: SubUserIn = Depends(SubUse
         }
     else:
         filter = {"$and": [
-            {'Referer': {'$regex': marketer_fullname}},
-            {'FirstName': {'$regex': args.first_name}},
-            {'LastName': {'$regex': args.last_name}},
-            {'RegisterDate': {'$regex': args.register_date}},
-            {'Phone': {'$regex': args.phone}},
-            {'Mobile': {'$regex': args.mobile}},
-            {'ID': {'$regex': args.user_id}}
+            {"Referer": marketer_fullname},
+            {"FirstName": {"$regex": args.first_name}},
+            {"LastName": {"$regex": args.last_name}}
             ]
         }
+        # {"$and": [
+        #     {'Referer': {'$regex': marketer_fullname}},
+        #     {'FirstName': {'$regex': args.first_name}},
+        #     {'LastName': {'$regex': args.last_name}},
+        #     {'RegisterDate': {'$regex': args.register_date}},
+        #     {'Phone': {'$regex': args.phone}},
+        #     {'Mobile': {'$regex': args.mobile}},
+        #     {'ID': {'$regex': args.user_id}}
+        #     ]
+        # }
     # print(query)
     # sort = list({
     #                 'BirthDate': -1
@@ -152,7 +158,7 @@ async def call_subuser_cost(request: Request, args: SubCostIn = Depends(SubCostI
     marketer_id = get_sub(request)
     brokerage = get_database()
     customers_coll = brokerage["customers"]
-    trades_coll = brokerage["trade3s"]
+    trades_coll = brokerage["trades"]
     #ToDo: Because of having username isn't optional so it will have been changed to IDP or username
     query = {
         # 'Referer': {
