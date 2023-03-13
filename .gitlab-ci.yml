@@ -91,6 +91,7 @@ deploy-dev:
     - chmod 700 ~/.kube
     - echo "$K8S_STG" | base64 -d > ~/.kube/config
     - kubectl -n "$NAMESPACE_Dev" apply -f deployment/dev/dev.yaml
+    - echo "kubectl set image -n "$NAMESPACE_Dev" deployment/$IMAGE_NAME $IMAGE_NAME=$REGISTRY_HOST/repository/tech1a-docker-registry/$IMAGE_NAME:$IMAGE_TAG_PID"
     - kubectl set image -n "$NAMESPACE_Dev" deployment/$IMAGE_NAME $IMAGE_NAME=$REGISTRY_HOST/repository/tech1a-docker-registry/$IMAGE_NAME:$IMAGE_TAG_PID
   needs:
     - job: build
