@@ -170,17 +170,32 @@ async def cal_marketer_cost(request: Request, args: CostIn = Depends(CostIn)):
 
     buy_agg_result = peek(trades_coll.aggregate(pipeline=buy_pipeline))
     sell_agg_result = peek(trades_coll.aggregate(pipeline=sell_pipeline))
+
     marketer_total = {
-        "TotalPureVolume": 0,
-        "TotalFee": 0
+       "TotalPureVolume": 0,
+       "TotalFee": 0
     }
 
-    if buy_agg_result and sell_agg_result:
-        total_buy = buy_agg_result.get("TotalBuy")
-        total_sell = sell_agg_result.get("TotalSell")
-        marketer_total["TotalPureVolume"] = total_sell + total_buy
-        marketer_total["TotalFee"] = \
-            sell_agg_result.get("TotalFee") + buy_agg_result.get("TotalFee")
+    buy_dict = {
+        "vol": 0,
+        "fee": 0
+    }
+
+    sell_dict = {
+        "vol": 0,
+        "fee": 0
+    }
+
+    if buy_agg_result:
+        buy_dict['vol'] = buy_agg_result.get("TotalBuy")
+        buy_dict['fee'] = buy_agg_result.get("TotalFee")
+
+    if sell_agg_result:
+        sell_dict['vol'] = sell_agg_result.get("TotalSell")
+        sell_dict['fee'] = sell_agg_result.get("TotalFee")
+
+    marketer_total["TotalPureVolume"] = buy_dict.get("vol") + sell_dict.get("vol")
+    marketer_total["TotalFee"] = buy_dict.get("fee") + sell_dict.get("fee")
 
     # find marketer's plan
     marketer_plans = {
@@ -198,6 +213,7 @@ async def cal_marketer_cost(request: Request, args: CostIn = Depends(CostIn)):
     pure_fee = marketer_total.get("TotalFee") * .65
     marketer_fee = 0
     tpv = marketer_total.get("TotalPureVolume")
+
     if marketer_plans["payeh"]["start"] <= tpv < marketer_plans["payeh"]["end"]:
         marketer_fee = pure_fee * marketer_plans["payeh"]["marketer_share"]
         plan = "Payeh"
@@ -296,9 +312,6 @@ async def cal_marketer_cost(request: Request, args: CostIn = Depends(CostIn)):
                  }
             )
 
-    pdf_maker(shobe='تهران', name='عباس خواجه زاده', doreh=args.to_date, total_fee= marketer_total.get("TotalFee"),
-              pure_fee=pure_fee, marketer_fee=marketer_fee, tax=tax, colat2=two_months_ago_coll, colat=collateral,
-              mandeh='0', pardakhti=final_fee + float(two_months_ago_coll), date=jd.now().strftime('%C'))
     return {
         "TotalFee": marketer_total.get("TotalFee"),
         "PureFee": pure_fee,
