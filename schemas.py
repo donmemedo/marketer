@@ -37,12 +37,12 @@ class UserOut(BaseModel):
     Args:
         BaseModel (_type_): _description_
     """
-    FirstName: str
-    LastName: str
+    FirstName: Optional[str]
+    LastName: Optional[str]
     PAMCode: str
     Username: Optional[str]
     Mobile: Optional[str]
-    RegisterDate: str
+    RegisterDate: Optional[str]
     BankAccountNumber: Optional[str]
 
 
