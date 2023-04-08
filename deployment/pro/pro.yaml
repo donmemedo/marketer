@@ -11,9 +11,9 @@ data:
   MONGO_DATABASE: "brokerage"
   SWAGGER_TITLE: "Marketer API"
   API_PREFIX: ""
-  DOCS_URL: "/marketer/docs"
-  OPENAPI_URL: "/marketer/openapi.json"
-  ROOT_PATH: "/marketer"
+  DOCS_URL: ""
+  OPENAPI_URL: ""
+  ROOT_PATH: ""
 ---
 apiVersion: apps/v1
 kind: Deployment
@@ -60,15 +60,13 @@ apiVersion: networking.k8s.io/v1
 kind: Ingress
 metadata:
   name: marketer-api
-  annotations:
-   nginx.ingress.kubernetes.io/rewrite-target: /$2
 spec:
   ingressClassName: nginx
   rules:
-    - host: pro.tech1a.co
+    - host: promarketer-api.tavanabroker.ir
       http:
         paths:
-        - path: /marketer(/|$)(.*)
+        - path: /
           pathType: Prefix
           backend:
             service:
