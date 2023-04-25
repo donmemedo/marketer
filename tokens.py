@@ -28,7 +28,7 @@ def get_kid(token):
 
 
 def get_jwk(kid):
-    for jwk in setting.JWKS.get('keys'):
+    for jwk in jwks.get('keys'):
         if jwk.get('kid') == kid:
             return jwk
     raise InvalidAuthorizationToken('kid not recognized')
