@@ -316,5 +316,4 @@ __pycache__/
 **/*.pdf
 deployment
 **/Dockerfile
-tokens.py
-config.py
+.gitlab-ci.yml
