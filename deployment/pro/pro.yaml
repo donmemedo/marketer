@@ -7,7 +7,7 @@ metadata:
     instance: marketer-api
 data:
   VERSION: "0.0.1"
-  MONGO_CONNECTION_STRING: "mongodb://root:root@mongo-marketer.stg-marketer-db.svc.cluster.local:27017/"
+  MONGO_CONNECTION_STRING: "mongodb://root:1219S4OiIhSXPJmOGfmdlFlsQ121@mongo-marketer.pro-marketer-db.svc.cluster.local:27017/"
   MONGO_DATABASE: "brokerage"
   SWAGGER_TITLE: "Marketer API"
   API_PREFIX: ""
@@ -51,10 +51,9 @@ spec:
   selector:
     app: marketer-api
   ports:
-    - port: 80
+    - port: 443
       protocol: TCP
       targetPort: http
-      protocol: TCP
 ---
 apiVersion: networking.k8s.io/v1
 kind: Ingress
@@ -63,7 +62,7 @@ metadata:
 spec:
   ingressClassName: nginx
   rules:
-    - host: promarketer-api.tavanabroker.ir
+    - host: marketer-api.tavanabroker.ir
       http:
         paths:
         - path: /
@@ -72,4 +71,4 @@ spec:
             service:
               name: marketer-api
               port:
-                number: 80
+                number: 443
