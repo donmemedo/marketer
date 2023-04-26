@@ -62,6 +62,10 @@ metadata:
   name: marketer-api
 spec:
   ingressClassName: nginx
+  tls:
+  - hosts:
+    - marketer-api.tavanabroker.ir
+    secretName: tavana-ir
   rules:
     - host: marketer-api.tavanabroker.ir
       http:
