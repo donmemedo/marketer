@@ -1,8 +1,3 @@
-"""_summary_
-
-Returns:
-    _type_: _description_
-"""
 from datetime import timedelta, datetime
 from khayyam import JalaliDatetime as jd
 from fastapi import Depends, APIRouter, Request
@@ -13,24 +8,18 @@ from database import get_database
 from tokens import JWTBearer, get_sub
 from schemas import CostIn, MarketerInvitationOut, MarketerInvitationIn, MarketerIdpIdIn
 from tools import to_gregorian_, peek
-# from ..pdf import pdf_maker
-from src.pdf import pdf_maker
+from pdf import pdf_maker
+
+
 plan_router = APIRouter(prefix='/marketer', tags=['Marketer'])
 
 
 @plan_router.get("/profile/", dependencies=[Depends(JWTBearer())])
 async def get_marketer_profile(request: Request):
-    """_summary_
-
-    Args:
-        request (Request): _description_
-
-    Returns:
-        _type_: _description_
-    """
     marketer_id = get_sub(request)
     brokerage = get_database()
     marketers_coll = brokerage["marketers"]
+
     # check if marketer exists and return his name
     query_result = marketers_coll.find({"IdpId": marketer_id})
     marketer_dict = next(query_result, None)
@@ -39,16 +28,6 @@ async def get_marketer_profile(request: Request):
 
 @plan_router.get("/cost/", dependencies=[Depends(JWTBearer())])
 async def cal_marketer_cost(request: Request, args: CostIn = Depends(CostIn)):
-    """_summary_
-
-    Args:
-        request (Request): _description_
-        args (CostIn, optional): _description_. Defaults to Depends(CostIn).
-
-    Returns:
-        _type_: _description_
-    """
-
     # get user id
     marketer_id = get_sub(request)
     brokerage = get_database()
@@ -328,15 +307,6 @@ async def cal_marketer_cost(request: Request, args: CostIn = Depends(CostIn)):
 
 @plan_router.put("/set-invitation-link")
 async def set_marketer_invitation_link(args: MarketerInvitationIn = Depends(MarketerInvitationIn)):
-    """_summary_
-
-    Args:
-        args (MarketerInvitationIn, optional):
-         _description_. Defaults to Depends(MarketerInvitationIn).
-
-    Returns:
-        _type_: _description_
-    """
     brokerage = get_database()
     marketers_coll = brokerage["marketers"]
 
@@ -352,14 +322,6 @@ async def set_marketer_invitation_link(args: MarketerInvitationIn = Depends(Mark
 
 @plan_router.put("/set-idp-id")
 async def set_marketer_idpid(args: MarketerIdpIdIn = Depends(MarketerIdpIdIn)):
-    """_summary_
-
-    Args:
-        args (MarketerIdpIdIn, optional): _description_. Defaults to Depends(MarketerIdpIdIn).
-
-    Returns:
-        _type_: _description_
-    """
     brokerage = get_database()
     marketers_coll = brokerage["marketers"]
 
@@ -375,11 +337,6 @@ async def set_marketer_idpid(args: MarketerIdpIdIn = Depends(MarketerIdpIdIn)):
 
 @plan_router.get("/list-all-marketers/", response_model=Page[MarketerInvitationOut])
 async def list_all_marketers():
-    """List All marketers with their Invitation Link
-
-    Returns:
-        _type_: MarketerInvitationOut
-    """
     brokerage = get_database()
     marketers_coll = brokerage["marketers"]
 

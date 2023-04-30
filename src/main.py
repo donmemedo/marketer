@@ -4,8 +4,6 @@ from config import setting
 from routers.plan import plan_router
 from routers.volume_and_fee import volume_and_fee_router
 from routers.user import user_router
-from routers.sub_user import sub_user_router
-
 
 
 app = FastAPI(
@@ -28,4 +26,3 @@ app.add_middleware(
 app.include_router(plan_router, prefix="")
 app.include_router(volume_and_fee_router, prefix="")
 app.include_router(user_router, prefix="")
-app.include_router(sub_user_router, prefix="")
