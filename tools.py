@@ -70,3 +70,12 @@ def peek(iterable):
     except StopIteration:
         return None
     return first
+
+
+def get_marketer_name(marketer_dict: dict):
+    if marketer_dict.get("FirstName") == "":
+        return marketer_dict.get("LastName")
+    elif marketer_dict.get("LastName") == "":
+        return marketer_dict.get("FirstName")
+    else:
+        return marketer_dict.get("FirstName") + " " + marketer_dict.get("LastName")
