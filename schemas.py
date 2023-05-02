@@ -1,12 +1,10 @@
-"""_summary_
-"""
 from dataclasses import dataclass
 from datetime import date
 from typing import Optional
 from fastapi import Query
 from khayyam import JalaliDatetime
 from pydantic import BaseModel
-from enum import Enum
+from enum import Enum, IntEnum
 
 
 current_date = JalaliDatetime.today().replace(day=1).strftime("%Y-%m-%d")
@@ -221,9 +219,20 @@ class UserTypeEnum(str, Enum):
     active = "active"
     inactive = "inactive"
 
+class SortField(str, Enum):
+    REGISTRATION_DATE = "RegisterDate"
+    TotalPureVolume = "TotalPureVolume"
+
+
+class SortOrder(IntEnum):
+    ASCENDING = 1
+    DESCENDING = -1
+
 
 @dataclass
 class UsersListIn(Pages):
-    user_type: UserTypeEnum = None
+    sort_by: SortField = Query(SortField.REGISTRATION_DATE)
+    sort_order: SortOrder = Query(SortOrder.ASCENDING)
+    user_type: UserTypeEnum = Query(UserTypeEnum.active)
     from_date: str = Query(current_date)
     to_date: str = Query(current_date)
