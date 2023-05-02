@@ -3,7 +3,7 @@ from datetime import date
 from typing import Optional
 from fastapi import Query
 from khayyam import JalaliDatetime
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 from enum import Enum, IntEnum
 
 
@@ -44,11 +44,10 @@ class UsersTotalVolumeIn:
 
 
 @dataclass
-class UserTotalVolumeIn:
-    trade_code: str
-    # HACK: because Pydantic do not support Jalali Date, I had to use the universal calendar.
-    from_date: str = Query(current_date)
-    to_date: str = Query(current_date)
+class UserTotalIn:
+    trade_code: str = Query(alias="TradeCode")
+    from_date: str = Query(default=current_date, alias="StartDate")
+    to_date: str = Query(default=current_date, alias="EndDate")
 
 
 @dataclass

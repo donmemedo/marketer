@@ -1,16 +1,16 @@
+from datetime import datetime, timedelta
 from fastapi import APIRouter, Depends, Request
-from schemas import UserTotalVolumeIn, UsersTotalPureIn, UsersListIn
+from schemas import UserTotalIn, UsersTotalPureIn, UsersListIn
 from database import get_database
 from tools import peek, to_gregorian_, get_marketer_name
 from tokens import JWTBearer, get_sub
-from datetime import datetime, timedelta
 
 
 volume_and_fee_router = APIRouter(prefix='/volume-and-fee', tags=['Volume and Fee'])
 
 
 @volume_and_fee_router.get("/user-total/", dependencies=[Depends(JWTBearer())])
-async def get_user_total_trades(request: Request, args: UserTotalVolumeIn = Depends(UserTotalVolumeIn)):
+async def get_user_total_trades(request: Request, args: UserTotalIn = Depends(UserTotalIn)):
     db = get_database()
 
     trades_coll = db["trades"]
