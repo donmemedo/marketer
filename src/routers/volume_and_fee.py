@@ -402,9 +402,7 @@ def users_list_by_volume(request: Request, args: UsersListIn = Depends(UsersList
             },
             {
                 "$sort": {
-                    "TotalPureVolume": 1,
-                    "RegisterDate": 1,
-                    "TradeCode": 1 
+                    args.sort_by.value: args.sort_order.value
                 }
             },
             {
@@ -486,6 +484,11 @@ def users_list_by_volume(request: Request, args: UsersListIn = Depends(UsersList
                     "Mobile": 1,
                     "RegisterDate": 1,
                     "BankAccountNumber": 1,
+                }
+            },
+                {
+                "$sort": {
+                    args.sort_by.value: args.sort_order.value
                 }
             },
                    {
