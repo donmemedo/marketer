@@ -1,22 +1,22 @@
 from datetime import datetime, timedelta
 from fastapi import APIRouter, Depends, Request
-from schemas import UserTotalIn, UsersTotalPureIn, UsersListIn
+from schemas import UserTotalIn, MarketerTotalIn, UsersListIn, ResponseOut
 from database import get_database
 from tools import peek, to_gregorian_, get_marketer_name
 from tokens import JWTBearer, get_sub
+from khayyam import JalaliDatetime
 
 
 volume_and_fee_router = APIRouter(prefix='/volume-and-fee', tags=['Volume and Fee'])
 
 
-@volume_and_fee_router.get("/user-total/", dependencies=[Depends(JWTBearer())])
+@volume_and_fee_router.get("/user-total/", dependencies=[Depends(JWTBearer())], response_model=None)
 async def get_user_total_trades(request: Request, args: UserTotalIn = Depends(UserTotalIn)):
     db = get_database()
 
-    trades_coll = db["trades"]
-
     # transform date from Gregorian to Jalali calendar
-    from_gregorian_date = to_gregorian_(args.from_date)
+    # from_gregorian_date = to_gregorian_(args.from_date)
+    from_gregorian_date = datetime.strptime(args.from_date, "%Y-%m-%d")
     to_gregorian_date = to_gregorian_(args.to_date)
     to_gregorian_date = datetime.strptime(to_gregorian_date, "%Y-%m-%d") + timedelta(days=1)
     to_gregorian_date = to_gregorian_date.strftime("%Y-%m-%d")
@@ -113,8 +113,8 @@ async def get_user_total_trades(request: Request, args: UserTotalIn = Depends(Us
         }
     ]
 
-    buy_agg_result = peek(trades_coll.aggregate(pipeline=buy_pipeline))
-    sell_agg_result = peek(trades_coll.aggregate(pipeline=sell_pipeline))
+    buy_agg_result = peek(db.trades.aggregate(pipeline=buy_pipeline))
+    sell_agg_result = peek(db.trades.aggregate(pipeline=sell_pipeline))
 
 
     buy_dict = {
@@ -135,24 +135,25 @@ async def get_user_total_trades(request: Request, args: UserTotalIn = Depends(Us
         sell_dict['vol'] = sell_agg_result.get("TotalSell")
         sell_dict['fee'] = sell_agg_result.get("TotalFee")
 
-    return {
+    return ResponseOut(
+        result={
         "TotalPureVolume": buy_dict.get("vol") + sell_dict.get("vol"),
         "TotalFee": buy_dict.get("fee") + sell_dict.get("fee")
-    }
+        }, 
+        timeGenerated=JalaliDatetime.now().strftime("%Y-%m-%dT%H:%M:%S.%f"),
+        error=""
+        )
 
 
-@volume_and_fee_router.get("/marketer-total", dependencies=[Depends(JWTBearer())])
-def get_marketer_total_trades(request: Request, args: UsersTotalPureIn = Depends(UsersTotalPureIn)):
-    # get user id
+@volume_and_fee_router.get("/marketer-total", dependencies=[Depends(JWTBearer())], response_model=None)
+def get_marketer_total_trades(request: Request, args: MarketerTotalIn = Depends(MarketerTotalIn)):
+
+    # get marketer id
     marketer_id = get_sub(request)    
     db = get_database()
 
-    customers_coll = db["customers"]
-    trades_coll = db["trades"]
-    marketers_coll = db["marketers"]
-
     # check if marketer exists and return his name
-    query_result = marketers_coll.find({"IdpId": marketer_id})
+    query_result = db.marketers.find({"IdpId": marketer_id})
 
     marketer_dict = peek(query_result)
 
@@ -165,7 +166,7 @@ def get_marketer_total_trades(request: Request, args: UsersTotalPureIn = Depends
 
     fields = {"PAMCode": 1}
 
-    customers_records = customers_coll.find(query, fields)
+    customers_records = db.customers.find(query, fields)
     trade_codes = [c.get('PAMCode') for c in customers_records]
 
     from_gregorian_date = to_gregorian_(args.from_date)
@@ -265,8 +266,8 @@ def get_marketer_total_trades(request: Request, args: UsersTotalPureIn = Depends
         }
     ]
 
-    buy_agg_result = peek(trades_coll.aggregate(pipeline=buy_pipeline))
-    sell_agg_result = peek(trades_coll.aggregate(pipeline=sell_pipeline))
+    buy_agg_result = peek(db.trades.aggregate(pipeline=buy_pipeline))
+    sell_agg_result = peek(db.trades.aggregate(pipeline=sell_pipeline))
 
     buy_dict = {
         "vol": 0,
@@ -286,10 +287,19 @@ def get_marketer_total_trades(request: Request, args: UsersTotalPureIn = Depends
         sell_dict['vol'] = sell_agg_result.get("TotalSell")
         sell_dict['fee'] = sell_agg_result.get("TotalFee")
 
-    return {
+    # return {
+        # "TotalPureVolume": buy_dict.get("vol") + sell_dict.get("vol"),
+        # "TotalFee": buy_dict.get("fee") + sell_dict.get("fee")
+    # }
+
+    return ResponseOut(
+        result={
         "TotalPureVolume": buy_dict.get("vol") + sell_dict.get("vol"),
         "TotalFee": buy_dict.get("fee") + sell_dict.get("fee")
-    }
+        }, 
+        timeGenerated=JalaliDatetime.now().strftime("%Y-%m-%dT%H:%M:%S.%f"),
+        error=""
+        )
 
 
 @volume_and_fee_router.get("/users-total", dependencies=[Depends(JWTBearer())])
