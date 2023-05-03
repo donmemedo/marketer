@@ -241,8 +241,8 @@ class MarketerOut(BaseModel):
 
 @dataclass
 class Pages:
-    size: int = Query(10)
-    page: int = Query(1)
+    size: int = Query(10, alias="PageSize")
+    page: int = Query(1, alias="PageNumber")
 
 
 class UserTypeEnum(str, Enum):
@@ -261,8 +261,8 @@ class SortOrder(IntEnum):
 
 @dataclass
 class UsersListIn(Pages):
-    sort_by: SortField = Query(SortField.REGISTRATION_DATE)
-    sort_order: SortOrder = Query(SortOrder.ASCENDING)
-    user_type: UserTypeEnum = Query(UserTypeEnum.active)
-    from_date: str = Query(current_date)
-    to_date: str = Query(current_date)
+    sort_by: SortField = Query(SortField.REGISTRATION_DATE, alias="SortBy")
+    sort_order: SortOrder = Query(SortOrder.ASCENDING, alias="SortOrder")
+    user_type: UserTypeEnum = Query(UserTypeEnum.active, alias="UserType")
+    from_date: str = Query(current_date, alias="StartDate")
+    to_date: str = Query(current_date, alias="EndDate")
