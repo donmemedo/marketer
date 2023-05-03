@@ -1,10 +1,11 @@
 from datetime import datetime, timedelta
 from fastapi import APIRouter, Depends, Request
-from schemas import UserTotalIn, MarketerTotalIn, UsersListIn, ResponseOut
+from schemas import UserTotalIn, MarketerTotalIn, UsersListIn, ResponseOut, ResponseListOut
 from database import get_database
 from tools import peek, to_gregorian_, get_marketer_name
 from tokens import JWTBearer, get_sub
 from khayyam import JalaliDatetime
+from fastapi_pagination import (Page)
 
 
 volume_and_fee_router = APIRouter(prefix='/volume-and-fee', tags=['Volume and Fee'])
@@ -14,9 +15,8 @@ volume_and_fee_router = APIRouter(prefix='/volume-and-fee', tags=['Volume and Fe
 async def get_user_total_trades(request: Request, args: UserTotalIn = Depends(UserTotalIn)):
     db = get_database()
 
-    # transform date from Gregorian to Jalali calendar
-    # from_gregorian_date = to_gregorian_(args.from_date)
-    from_gregorian_date = datetime.strptime(args.from_date, "%Y-%m-%d")
+    # transform date from Jalali to Gregorian
+    from_gregorian_date = to_gregorian_(args.from_date)
     to_gregorian_date = to_gregorian_(args.to_date)
     to_gregorian_date = datetime.strptime(to_gregorian_date, "%Y-%m-%d") + timedelta(days=1)
     to_gregorian_date = to_gregorian_date.strftime("%Y-%m-%d")
@@ -169,6 +169,7 @@ def get_marketer_total_trades(request: Request, args: MarketerTotalIn = Depends(
     customers_records = db.customers.find(query, fields)
     trade_codes = [c.get('PAMCode') for c in customers_records]
 
+    # transform date from Jalali to Gregorian
     from_gregorian_date = to_gregorian_(args.from_date)
     to_gregorian_date = to_gregorian_(args.to_date)
     to_gregorian_date = datetime.strptime(to_gregorian_date, "%Y-%m-%d") + timedelta(days=1)
@@ -287,11 +288,6 @@ def get_marketer_total_trades(request: Request, args: MarketerTotalIn = Depends(
         sell_dict['vol'] = sell_agg_result.get("TotalSell")
         sell_dict['fee'] = sell_agg_result.get("TotalFee")
 
-    # return {
-        # "TotalPureVolume": buy_dict.get("vol") + sell_dict.get("vol"),
-        # "TotalFee": buy_dict.get("fee") + sell_dict.get("fee")
-    # }
-
     return ResponseOut(
         result={
         "TotalPureVolume": buy_dict.get("vol") + sell_dict.get("vol"),
@@ -302,7 +298,7 @@ def get_marketer_total_trades(request: Request, args: MarketerTotalIn = Depends(
         )
 
 
-@volume_and_fee_router.get("/users-total", dependencies=[Depends(JWTBearer())])
+@volume_and_fee_router.get("/users-total", dependencies=[Depends(JWTBearer())], response_model=None)
 def users_list_by_volume(request: Request, args: UsersListIn = Depends(UsersListIn)):
     # get user id
     marketer_id = get_sub(request)
@@ -441,12 +437,18 @@ def users_list_by_volume(request: Request, args: UsersListIn = Depends(UsersList
 
         if active_dict is None:
             return {}
+        
+        result = {
+            "pagedData": active_dict.get("items", []),
+            "errorCode": None,
+            "errorMessage": None,
+            "totalCount": active_dict.get("total", 0)
+            }
 
-        active_dict["page"] = args.page
-        active_dict["size"] = args.size
-        active_dict["pages"] = - ( active_dict.get("total") // - args.size )
-
-        return active_dict
+        return ResponseListOut(timeGenerated=datetime.now(),
+                               result=result,
+                               error=""
+                               )
 
     elif args.user_type.value == "inactive":
         active_users_pipeline = [ 
@@ -521,14 +523,19 @@ def users_list_by_volume(request: Request, args: UsersListIn = Depends(UsersList
             }
         ]
 
-        inactives_result = customers_coll.aggregate(pipeline=inactive_users_pipline)
-        inactives_dict = next(inactives_result, None)
-        inactives_dict["page"] = args.page
-        inactives_dict["size"] = args.size
-        inactives_dict["pages"] = - ( inactives_dict.get("total") // - args.size )
+        inactive_result = customers_coll.aggregate(pipeline=inactive_users_pipline)
+        inactive_dict = next(inactive_result, None)
 
-        return inactives_dict
+        result = {
+            "pagedData": inactive_dict.get("items", []),
+            "errorCode": None,
+            "errorMessage": None,
+            "totalCount": inactive_dict.get("total", 0)
+            }
+
+        return ResponseListOut(timeGenerated=datetime.now(),
+                               result=result,
+                               error=""
+                            )
     else:
         return {}
-
-
