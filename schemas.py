@@ -5,7 +5,7 @@ from fastapi import Query
 from khayyam import JalaliDatetime
 from pydantic import BaseModel, Field
 from enum import Enum, IntEnum
-from typing import Any, List
+from typing import Any, List, Dict
 
 
 current_date = JalaliDatetime.today().replace(day=1).strftime("%Y-%m-%d")
@@ -67,6 +67,12 @@ class UserTotalOut:
 class ResponseOut:
     timeGenerated: JalaliDatetime
     result: List[UserTotalOut] = List[Any]
+    error: str = Query("nothing")
+
+@dataclass
+class ResponseListOut:
+    timeGenerated: JalaliDatetime
+    result: Dict
     error: str = Query("nothing")
 
 
