@@ -5,6 +5,7 @@ from fastapi import Query
 from khayyam import JalaliDatetime
 from pydantic import BaseModel, Field
 from enum import Enum, IntEnum
+from typing import Any, List
 
 
 current_date = JalaliDatetime.today().replace(day=1).strftime("%Y-%m-%d")
@@ -48,6 +49,30 @@ class UserTotalIn:
     trade_code: str = Query(alias="TradeCode")
     from_date: str = Query(default=current_date, alias="StartDate")
     to_date: str = Query(default=current_date, alias="EndDate")
+
+
+@dataclass
+class MarketerTotalIn:
+    from_date: str = Query(default=current_date, alias="StartDate")
+    to_date: str = Query(default=current_date, alias="EndDate")
+
+
+@dataclass
+class UserTotalOut:
+    TotalPureVolume: float
+    TotalFee: float
+
+
+@dataclass
+class ResponseOut:
+    timeGenerated: JalaliDatetime
+    result: List[UserTotalOut] = List[Any]
+    error: str = Query("nothing")
+
+
+@dataclass
+class UserTotalOutList:
+    result: dict[UserTotalOut]
 
 
 @dataclass
