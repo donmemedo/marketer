@@ -12,22 +12,6 @@ from datetime import datetime
 user_router = APIRouter(prefix='/user', tags=['User'])
 
 
-@user_router.get("/list/", dependencies=[Depends(JWTBearer())], response_model=Page[UserOut])
-async def search_marketer_user(request: Request):
-    # get marketer's id
-    marketer_id = get_sub(request)
-    brokerage = get_database()
-    customer_coll = brokerage["customers"]
-    marketers_coll = brokerage["marketers"]
-
-    # check if marketer exists and return his name
-    query_result = marketers_coll.find({"IdpId": marketer_id})
-    marketer_dict = peek(query_result)
-    marketer_fullname = marketer_dict.get("FirstName") + " " + marketer_dict.get("LastName")
-
-    return paginate(customer_coll, {"Referer": marketer_fullname}, sort=[("RegisterDate", -1)])
-
-
 @user_router.get("/search/", dependencies=[Depends(JWTBearer())], response_model=None)
 async def get_user_profile(request: Request, args: UserSearchIn = Depends(UserSearchIn)):
     # get marketer's id
