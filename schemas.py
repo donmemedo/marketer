@@ -28,7 +28,7 @@ class UserIn:
 @dataclass
 class UserSearchIn:
     name: str = Query("", alias="Name")
-    page_index: int = Query(0, alias="PageNumber")
+    page_index: int = Query(1, alias="PageNumber")
     page_size: int = Query(5, alias="PageSize")
 
     
