@@ -1,14 +1,11 @@
 from datetime import timedelta, datetime
 from khayyam import JalaliDatetime as jd
 from fastapi import Depends, APIRouter, Request
-from fastapi_pagination import Page, add_pagination
-from fastapi_pagination.ext.pymongo import paginate
 from serializers import marketer_entity
 from database import get_database
 from tokens import JWTBearer, get_sub
-from schemas import CostIn, MarketerInvitationOut, MarketerInvitationIn, MarketerIdpIdIn, ResponseOut
+from schemas import CostIn, MarketerInvitationIn, MarketerIdpIdIn, ResponseOut
 from tools import to_gregorian_, peek
-from pdf import pdf_maker
 
 
 plan_router = APIRouter(prefix='/marketer', tags=['Marketer'])
@@ -339,12 +336,4 @@ async def set_marketer_idpid(args: MarketerIdpIdIn = Depends(MarketerIdpIdIn)):
     return marketer_entity(marketer_dict)
 
 
-@plan_router.get("/list-all-marketers/", response_model=Page[MarketerInvitationOut])
-async def list_all_marketers():
-    brokerage = get_database()
-    marketers_coll = brokerage["marketers"]
-
-    return paginate(marketers_coll, {})
-
-
-add_pagination(plan_router)
+# add_pagination(plan_router)

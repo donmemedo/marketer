@@ -12,7 +12,7 @@ volume_and_fee_router = APIRouter(prefix='/volume-and-fee', tags=['Volume and Fe
 
 @volume_and_fee_router.get("/user-total/", dependencies=[Depends(JWTBearer())], response_model=None)
 async def get_user_total_trades(request: Request, args: UserTotalIn = Depends(UserTotalIn)):
-    db = get_database()
+    brokerage = get_database()
 
     # transform date from Jalali to Gregorian
     from_gregorian_date = to_gregorian_(args.from_date)
@@ -20,127 +20,99 @@ async def get_user_total_trades(request: Request, args: UserTotalIn = Depends(Us
     to_gregorian_date = datetime.strptime(to_gregorian_date, "%Y-%m-%d") + timedelta(days=1)
     to_gregorian_date = to_gregorian_date.strftime("%Y-%m-%d")
 
-    buy_pipeline = [ 
-        {
-            "$match": {
-                "$and": [
-                    {"TradeCode": args.trade_code }, 
-                    {"TradeDate": {"$gte": from_gregorian_date}},
-                    {"TradeDate": {"$lte": to_gregorian_date}},
-                    {"TradeType": 1}
-                    ]
-                }
-            },
-        {
-            "$project": {
-                "Price": 1,
-                "Volume": 1,
-                "Total" : {"$multiply": ["$Price", "$Volume"]},
-                "TotalCommission": 1,
-                "TradeItemBroker": 1,
-                "Buy": {
-                    "$add": [
-                        "$TotalCommission",
-                        {"$multiply": ["$Price", "$Volume"]}
+    pipeline = [ 
+            {
+                "$match": {
+                    "$and": [
+                        {"TradeCode": args.trade_code}, 
+                        {"TradeDate": {"$gte": from_gregorian_date}},
+                        {"TradeDate": {"$lte": to_gregorian_date}}
                         ]
                     }
-            }
-        },
-        {
-            "$group": {
-                "_id": "$id", 
-                "TotalFee": {
-                    "$sum": "$TradeItemBroker"
                 },
-                "TotalBuy": {
-                    "$sum": "$Buy"
-                }
-            }
-        },
-        {
-            "$project": {
-                "_id": 0,
-                "TotalBuy": 1,
-                "TotalFee": 1
-            }
-        }
-    ]
-
-    sell_pipeline = [ 
-        {
-            "$match": {
-                "$and": [
-                    {"TradeCode": args.trade_code}, 
-                    {"TradeDate": {"$gte": from_gregorian_date}},
-                    {"TradeDate": {"$lte": to_gregorian_date}},
-                    {"TradeType": 2}
-                    ]
+            {
+                "$project": {
+                    "Price": 1,
+                    "Volume": 1,
+                    "Total" : {"$multiply": ["$Price", "$Volume"]},
+                    "TotalCommission": 1,
+                    "TradeItemBroker": 1,
+                    "TradeCode": 1,
+                    "Commission": {
+                        "$cond": { 
+                            "if": {"$eq": ["$TradeType", 1]}, 
+                            "then": {
+                                "$add": [
+                                    "$TotalCommission",
+                                    {"$multiply": ["$Price", "$Volume"]}
+                                ]
+                            }, 
+                            "else": {
+                                "$subtract": [
+                                    {"$multiply": ["$Price", "$Volume"]},
+                                    "$TotalCommission"
+                                ]
+                            }
+                        }
+                    }
                 }
             },
-        {
-            "$project": {
-                "Price": 1,
-                "Volume": 1,
-                "Total" : {"$multiply": ["$Price", "$Volume"]},
-                "TotalCommission": 1,
-                "TradeItemBroker": 1,
-                "Sell": {
-                    "$subtract": [
-                        {"$multiply": ["$Price", "$Volume"]},
-                        "$TotalCommission"
-                        ]
-                    }
-            }
-        },
-        {
-            "$group": {
-                "_id": "$id", 
-                "TotalFee": {
-                 "$sum": "$TradeItemBroker"
-                },
-                "TotalSell": {
-                    "$sum": "$Sell"
+            {
+                "$group": {
+                    "_id": "$TradeCode",
+                    "TotalFee": {
+                     "$sum": "$TradeItemBroker"
+                    },
+                    "TotalPureVolume": {"$sum": "$Commission"}
+                }
+            },
+            {
+                "$project": {
+                    "_id": 0,
+                    "TradeCode": "$_id",
+                    "TotalPureVolume": 1,
+                    "TotalFee": 1
+                }
+            },
+            {
+                "$lookup": {
+                    "from": "customers",
+                    "localField": "TradeCode",
+                    "foreignField": "PAMCode",
+                    "as": "UserProfile"
+                }
+            },
+            {
+                "$unwind": "$UserProfile"
+            },
+            {
+                "$project": {
+                    "TradeCode": 1,
+                    "TotalFee": 1,
+                    "TotalPureVolume": 1,
+                    "FirstName": "$UserProfile.FirstName",
+                    "LastName": "$UserProfile.LastName",
+                    "Username": "$UserProfile.Username",
+                    "Mobile": "$UserProfile.Mobile",
+                    "RegisterDate": "$UserProfile.RegisterDate",
+                    "BankAccountNumber": "$UserProfile.BankAccountNumber"
                 }
             }
-        },
-        {
-            "$project": {
-                "_id": 0,
-                "TotalSell": 1,
-                "TotalFee": 1
-            }
-        }
     ]
 
-    buy_agg_result = peek(db.trades.aggregate(pipeline=buy_pipeline))
-    sell_agg_result = peek(db.trades.aggregate(pipeline=sell_pipeline))
+    result = next(brokerage.trades.aggregate(pipeline=pipeline), None)
 
-
-    buy_dict = {
-        "vol": 0,
-        "fee": 0
-    }
-
-    sell_dict = {
-        "vol": 0,
-        "fee": 0
-    }
-
-    if buy_agg_result:
-        buy_dict['vol'] = buy_agg_result.get("TotalBuy")
-        buy_dict['fee'] = buy_agg_result.get("TotalFee")
-
-    if sell_agg_result:
-        sell_dict['vol'] = sell_agg_result.get("TotalSell")
-        sell_dict['fee'] = sell_agg_result.get("TotalFee")
-
-    return ResponseOut(
-        result={
-        "TotalPureVolume": buy_dict.get("vol") + sell_dict.get("vol"),
-        "TotalFee": buy_dict.get("fee") + sell_dict.get("fee")
-        }, 
-        timeGenerated=JalaliDatetime.now().strftime("%Y-%m-%dT%H:%M:%S.%f"),
-        error=""
+    if result:
+        return ResponseOut(
+            result= result, 
+            timeGenerated=JalaliDatetime.now().strftime("%Y-%m-%dT%H:%M:%S.%f"),
+            error=""
+            )
+    else:
+        return ResponseOut(
+            timeGenerated=JalaliDatetime.now().strftime("%Y-%m-%dT%H:%M:%S.%f"),
+            result=[],
+            error=""
         )
 
 
@@ -149,24 +121,17 @@ def get_marketer_total_trades(request: Request, args: MarketerTotalIn = Depends(
 
     # get marketer id
     marketer_id = get_sub(request)    
-    db = get_database()
+    brokerage = get_database()
 
     # check if marketer exists and return his name
-    query_result = db.marketers.find({"IdpId": marketer_id})
+    query_result = brokerage.marketers.find_one({"IdpId": marketer_id})
 
-    marketer_dict = peek(query_result)
+    marketer_fullname = get_marketer_name(query_result)
 
-    marketer_fullname = marketer_dict.get("FirstName") + " " + marketer_dict.get("LastName")
-    # Check if customer exist
-    query = {"$and": [
-        {"Referer": {"$regex": marketer_fullname}}
-        ]
-    }
+    # Get all customers
+    query = {"Referer": {"$regex": marketer_fullname}}
 
-    fields = {"PAMCode": 1}
-
-    customers_records = db.customers.find(query, fields)
-    trade_codes = [c.get('PAMCode') for c in customers_records]
+    trade_codes = brokerage.customers.distinct("PAMCode", query)
 
     # transform date from Jalali to Gregorian
     from_gregorian_date = to_gregorian_(args.from_date)
@@ -174,132 +139,76 @@ def get_marketer_total_trades(request: Request, args: MarketerTotalIn = Depends(
     to_gregorian_date = datetime.strptime(to_gregorian_date, "%Y-%m-%d") + timedelta(days=1)
     to_gregorian_date = to_gregorian_date.strftime("%Y-%m-%d")
 
-    buy_pipeline = [ 
-        {
-            "$match": {
-                "$and": [
-                    {"TradeCode": {"$in": trade_codes}}, 
-                    {"TradeDate": {"$gte": from_gregorian_date}},
-                    {"TradeDate": {"$lte": to_gregorian_date}},
-                    {"TradeType": 1}
-                    ]
-                }
-            },
-        {
-            "$project": {
-                "Price": 1,
-                "Volume": 1,
-                "Total" : {"$multiply": ["$Price", "$Volume"]},
-                "TotalCommission": 1,
-                "TradeItemBroker": 1,
-                "Buy": {
-                    "$add": [
-                        "$TotalCommission",
-                        {"$multiply": ["$Price", "$Volume"]}
+    pipeline = [ 
+            {
+                "$match": {
+                    "$and": [
+                        {"TradeCode": {"$in": trade_codes}}, 
+                        {"TradeDate": {"$gte": from_gregorian_date}},
+                        {"TradeDate": {"$lte": to_gregorian_date}}
                         ]
                     }
-            }
-        },
-        {
-            "$group": {
-                "_id": "$id", 
-                "TotalFee": {
-                    "$sum": "$TradeItemBroker"
                 },
-                "TotalBuy": {
-                    "$sum": "$Buy"
-                }
-            }
-        },
-        {
-            "$project": {
-                "_id": 0,
-                "TotalBuy": 1,
-                "TotalFee": 1
-            }
-        }
-    ]
-
-    sell_pipeline = [ 
-        {
-            "$match": {
-                "$and": [
-                    {"TradeCode": {"$in": trade_codes}}, 
-                    {"TradeDate": {"$gte": from_gregorian_date}},
-                    {"TradeDate": {"$lte": to_gregorian_date}},
-                    {"TradeType": 2}
-                    ]
+            {
+                "$project": {
+                    "Price": 1,
+                    "Volume": 1,
+                    "Total" : {"$multiply": ["$Price", "$Volume"]},
+                    "TotalCommission": 1,
+                    "TradeItemBroker": 1,
+                    "TradeCode": 1,
+                    "Commission": {
+                        "$cond": { 
+                            "if": {"$eq": ["$TradeType", 1]}, 
+                            "then": {
+                                "$add": [
+                                    "$TotalCommission",
+                                    {"$multiply": ["$Price", "$Volume"]}
+                                ]
+                            }, 
+                            "else": {
+                                "$subtract": [
+                                    {"$multiply": ["$Price", "$Volume"]},
+                                    "$TotalCommission"
+                                ]
+                            }
+                        }
+                    }
                 }
             },
-        {
-            "$project": {
-                "Price": 1,
-                "Volume": 1,
-                "Total" : {"$multiply": ["$Price", "$Volume"]},
-                "TotalCommission": 1,
-                "TradeItemBroker": 1,
-                "Sell": {
-                    "$subtract": [
-                        {"$multiply": ["$Price", "$Volume"]},
-                        "$TotalCommission"
-                        ]
-                    }
-            }
-        },
-        {
-            "$group": {
-                "_id": "$id", 
-                "TotalFee": {
-                 "$sum": "$TradeItemBroker"
-                },
-                "TotalSell": {
-                    "$sum": "$Sell"
+            {
+                "$group": {
+                    "_id": "$id",
+                    "TotalFee": {
+                     "$sum": "$TradeItemBroker"
+                    },
+                    "TotalPureVolume": {"$sum": "$Commission"}
+                }
+            },
+            {
+                "$project": {
+                    "_id": 0,
+                    "TradeCode": "$_id",
+                    "TotalPureVolume": 1,
+                    "TotalFee": 1
                 }
             }
-        },
-        {
-            "$project": {
-                "_id": 0,
-                "TotalSell": 1,
-                "TotalFee": 1
-            }
-        }
     ]
 
-    buy_agg_result = peek(db.trades.aggregate(pipeline=buy_pipeline))
-    sell_agg_result = peek(db.trades.aggregate(pipeline=sell_pipeline))
+    result = next(brokerage.trades.aggregate(pipeline=pipeline), None)
 
-    buy_dict = {
-        "vol": 0,
-        "fee": 0
-    }
-
-    sell_dict = {
-        "vol": 0,
-        "fee": 0
-    }
-
-    if buy_agg_result:
-        buy_dict['vol'] = buy_agg_result.get("TotalBuy")
-        buy_dict['fee'] = buy_agg_result.get("TotalFee")
-
-    if sell_agg_result:
-        sell_dict['vol'] = sell_agg_result.get("TotalSell")
-        sell_dict['fee'] = sell_agg_result.get("TotalFee")
-
-    return ResponseOut(
-        result={
-        "TotalPureVolume": buy_dict.get("vol") + sell_dict.get("vol"),
-        "TotalFee": buy_dict.get("fee") + sell_dict.get("fee")
-        }, 
-        timeGenerated=JalaliDatetime.now().strftime("%Y-%m-%dT%H:%M:%S.%f"),
-        error=""
-        )
+    if result:
+        return ResponseOut(timeGenerated=datetime.now(),
+                           result=result,
+                           error="")
+    else:
+        return ResponseOut(timeGenerated=datetime.now(),
+                           result=[],
+                           error="")
 
 
 @volume_and_fee_router.get("/users-total", dependencies=[Depends(JWTBearer())], response_model=None)
 def users_list_by_volume(request: Request, args: UsersListIn = Depends(UsersListIn)):
-    # get user id
     marketer_id = get_sub(request)
     db = get_database()
 
