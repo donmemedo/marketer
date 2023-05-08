@@ -210,10 +210,10 @@ def get_marketer_total_trades(request: Request, args: MarketerTotalIn = Depends(
 @volume_and_fee_router.get("/users-total", dependencies=[Depends(JWTBearer())], response_model=None)
 def users_list_by_volume(request: Request, args: UsersListIn = Depends(UsersListIn)):
     marketer_id = get_sub(request)
-    db = get_database()
+    brokerage = get_database()
 
     # check if marketer exists and return his name
-    query_result = db.marketers.find({"IdpId": marketer_id})
+    query_result = brokerage.marketers.find({"IdpId": marketer_id})
 
     marketer_dict = peek(query_result)
 
@@ -224,12 +224,9 @@ def users_list_by_volume(request: Request, args: UsersListIn = Depends(UsersList
     to_gregorian_date = datetime.strptime(to_gregorian_date, "%Y-%m-%d") + timedelta(days=1)
     to_gregorian_date = to_gregorian_date.strftime("%Y-%m-%d")
 
-    # get all customers' TradeCodes
-    customers_records = db.customers.find({"Referer": marketer_fullname}, 
-                                            {"PAMCode": 1}
-                                            )
+    query = {"Referer": {"$regex": marketer_fullname}}
 
-    trade_codes = [c.get('PAMCode') for c in customers_records]
+    trade_codes = brokerage.customers.distinct("PAMCode", query)
 
     if args.user_type.value == "active":
         pipeline = [ 
@@ -335,9 +332,7 @@ def users_list_by_volume(request: Request, args: UsersListIn = Depends(UsersList
             }
         ]
 
-        aggr_result = db.trades.aggregate(pipeline=pipeline)
-
-        active_dict = next(aggr_result, None)
+        active_dict = next(brokerage.trades.aggregate(pipeline=pipeline), None)
 
         if active_dict is None:
             return {}
@@ -378,7 +373,7 @@ def users_list_by_volume(request: Request, args: UsersListIn = Depends(UsersList
             }
         ]
 
-        active_users_res = db.trades.aggregate(pipeline=active_users_pipeline)
+        active_users_res = brokerage.trades.aggregate(pipeline=active_users_pipeline)
         active_users_set = set(i.get("TradeCode") for i in active_users_res)
 
         # check wether it is empty or not
@@ -430,8 +425,7 @@ def users_list_by_volume(request: Request, args: UsersListIn = Depends(UsersList
             }
         ]
 
-        inactive_result = db.customers.aggregate(pipeline=inactive_users_pipline)
-        inactive_dict = next(inactive_result, None)
+        inactive_dict = next(brokerage.customers.aggregate(pipeline=inactive_users_pipline), None)
 
         result = {
             "pagedData": inactive_dict.get("items", []),
