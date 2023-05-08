@@ -126,23 +126,12 @@ class PureLastNDaysIn:
 
 @dataclass
 class CostIn:
-    insurance: int = Query(0)
-    tax: int = Query(0)
-    salary: int = Query(0)
-    collateral: int = Query(0)
-    from_date: str = Query(current_date)
-    to_date: str = Query(current_date)
-
-@dataclass
-class SubCostIn:
-    first_name: str = Query("")
-    last_name: str = Query("")
-    phone: str = Query("")
-    mobile: str = Query("")
-    user_id: str = Query("")
-    username: str = Query("")
-    from_date: str = Query(current_date)
-    to_date: str = Query(current_date)
+    insurance: int = Query(0, alias="Insurance")
+    tax: int = Query(0, alias="Tax")
+    salary: int = Query(0, alias="Salary")
+    collateral: int = Query(0, alias="Collateral")
+    from_date: str = Query(current_date, alias="StartDate")
+    to_date: str = Query(current_date, alias="EndDate")
 
 
 @dataclass
