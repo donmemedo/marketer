@@ -6,7 +6,7 @@ from fastapi_pagination.ext.pymongo import paginate
 from serializers import marketer_entity
 from database import get_database
 from tokens import JWTBearer, get_sub
-from schemas import CostIn, MarketerInvitationOut, MarketerInvitationIn, MarketerIdpIdIn
+from schemas import CostIn, MarketerInvitationOut, MarketerInvitationIn, MarketerIdpIdIn, ResponseOut
 from tools import to_gregorian_, peek
 from pdf import pdf_maker
 
@@ -18,12 +18,20 @@ plan_router = APIRouter(prefix='/marketer', tags=['Marketer'])
 async def get_marketer_profile(request: Request):
     marketer_id = get_sub(request)
     brokerage = get_database()
-    marketers_coll = brokerage["marketers"]
 
     # check if marketer exists and return his name
-    query_result = marketers_coll.find({"IdpId": marketer_id})
-    marketer_dict = next(query_result, None)
-    return marketer_entity(marketer_dict)
+    query_result = brokerage.marketers.find_one({"IdpId": marketer_id}, 
+                                                {'_id': 0}
+                                            )
+
+    if query_result:
+        return ResponseOut(timeGenerated=datetime.now(),
+                           result=query_result,
+                           error="")
+    else:    
+        return ResponseOut(timeGenerated=datetime.now(),
+                           result={},
+                           error="")
 
 
 @plan_router.get("/cost/", dependencies=[Depends(JWTBearer())])

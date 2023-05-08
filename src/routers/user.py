@@ -85,9 +85,6 @@ async def get_user_profile(request: Request, args: UserSearchIn = Depends(UserSe
     results = brokerage.customers.aggregate(pipeline=pipeline)
 
     result_dict = next(results, None)
-    from pprint import pprint
-
-    pprint(result_dict)
 
     if result_dict:
         result = {
