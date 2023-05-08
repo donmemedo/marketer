@@ -25,6 +25,13 @@ class UserIn:
     page_index: int = Query(0)
 
 
+@dataclass
+class UserSearchIn:
+    name: str = Query("", alias="Name")
+    page_index: int = Query(0)
+    page_size: int = Query(5)
+
+    
 class UserOut(BaseModel):
     FirstName: Optional[str]
     LastName: Optional[str]
@@ -37,7 +44,6 @@ class UserOut(BaseModel):
 
 @dataclass
 class UsersTotalVolumeIn:
-    # HACK: because Pydantic do not support Jalali Date, I had to use the universal calendar.
     from_date: date = Query(current_date)
     to_date: date = Query(current_date)
     page_index: int = Query(0)
@@ -96,14 +102,12 @@ class UserFee:
 
 @dataclass
 class UserTotalFee:
-    # HACK: because Pydantic do not support Jalali Date, I had to use the universal calendar.
     from_date: date = Query(current_date)
     to_date: date = Query(current_date)
 
 
 @dataclass
 class UsersTotalPureIn:
-    # HACK: because Pydantic do not support Jalali Date, I had to use the universal calendar.
     from_date: str = Query(current_date)
     to_date: str = Query(current_date)
 
@@ -212,7 +216,6 @@ class SubUserOut(BaseModel):
 class MarketerIn:
     first_name: str = Query("")
     last_name: str = Query("")
-    # marketer_name: str = Query("")
     register_date: str = Query("")
     phone: str = Query("")
     mobile: str = Query("")

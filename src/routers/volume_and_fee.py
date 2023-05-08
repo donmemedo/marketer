@@ -5,7 +5,6 @@ from database import get_database
 from tools import peek, to_gregorian_, get_marketer_name
 from tokens import JWTBearer, get_sub
 from khayyam import JalaliDatetime
-from fastapi_pagination import (Page)
 
 
 volume_and_fee_router = APIRouter(prefix='/volume-and-fee', tags=['Volume and Fee'])
@@ -304,12 +303,8 @@ def users_list_by_volume(request: Request, args: UsersListIn = Depends(UsersList
     marketer_id = get_sub(request)
     db = get_database()
 
-    customers_coll = db.customers
-    trades_coll = db.trades
-    marketers_coll = db.marketers
-
     # check if marketer exists and return his name
-    query_result = marketers_coll.find({"IdpId": marketer_id})
+    query_result = db.marketers.find({"IdpId": marketer_id})
 
     marketer_dict = peek(query_result)
 
@@ -321,7 +316,7 @@ def users_list_by_volume(request: Request, args: UsersListIn = Depends(UsersList
     to_gregorian_date = to_gregorian_date.strftime("%Y-%m-%d")
 
     # get all customers' TradeCodes
-    customers_records = customers_coll.find({"Referer":  marketer_fullname}, 
+    customers_records = db.customers.find({"Referer": marketer_fullname}, 
                                             {"PAMCode": 1}
                                             )
 
@@ -334,7 +329,7 @@ def users_list_by_volume(request: Request, args: UsersListIn = Depends(UsersList
                     "$and": [
                         {"TradeCode": {"$in": trade_codes}}, 
                         {"TradeDate": {"$gte": from_gregorian_date}},
-                        {"TradeDate": {"$lte": to_gregorian_date}} 
+                        {"TradeDate": {"$lte": to_gregorian_date}}
                         ]
                     }
                 },
@@ -403,7 +398,7 @@ def users_list_by_volume(request: Request, args: UsersListIn = Depends(UsersList
                     "Username": "$UserProfile.Username",
                     "Mobile": "$UserProfile.Mobile",
                     "RegisterDate": "$UserProfile.RegisterDate",
-                    "BankAccountNumber": "$UserProfile.BankAccountNumber",
+                    "BankAccountNumber": "$UserProfile.BankAccountNumber"
                 }
             },
             {
@@ -431,13 +426,13 @@ def users_list_by_volume(request: Request, args: UsersListIn = Depends(UsersList
             }
         ]
 
-        aggr_result = trades_coll.aggregate(pipeline=pipeline)
-    
+        aggr_result = db.trades.aggregate(pipeline=pipeline)
+
         active_dict = next(aggr_result, None)
 
         if active_dict is None:
             return {}
-        
+
         result = {
             "pagedData": active_dict.get("items", []),
             "errorCode": None,
@@ -474,7 +469,7 @@ def users_list_by_volume(request: Request, args: UsersListIn = Depends(UsersList
             }
         ]
 
-        active_users_res = trades_coll.aggregate(pipeline=active_users_pipeline)
+        active_users_res = db.trades.aggregate(pipeline=active_users_pipeline)
         active_users_set = set(i.get("TradeCode") for i in active_users_res)
 
         # check wether it is empty or not
@@ -496,6 +491,9 @@ def users_list_by_volume(request: Request, args: UsersListIn = Depends(UsersList
                     "Mobile": 1,
                     "RegisterDate": 1,
                     "BankAccountNumber": 1,
+                    "FirmTitle": 1,
+                    "Telephone": 1,
+                    "FirmRegisterDate": 1
                 }
             },
                 {
@@ -523,7 +521,7 @@ def users_list_by_volume(request: Request, args: UsersListIn = Depends(UsersList
             }
         ]
 
-        inactive_result = customers_coll.aggregate(pipeline=inactive_users_pipline)
+        inactive_result = db.customers.aggregate(pipeline=inactive_users_pipline)
         inactive_dict = next(inactive_result, None)
 
         result = {
@@ -538,4 +536,6 @@ def users_list_by_volume(request: Request, args: UsersListIn = Depends(UsersList
                                error=""
                             )
     else:
-        return {}
+        return ResponseListOut(timeGenerated=datetime.now(),
+                               result=[],
+                               error="")
