@@ -165,7 +165,6 @@ deploy-pro:
     - job: build
   retry: 2
   only:
-    - main
     - tags
   when: manual
 
@@ -177,5 +176,4 @@ deploy-pro-SMS:
   needs:
     - job: deploy-pro
   only:
-    - main
     - tags

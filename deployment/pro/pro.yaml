@@ -7,13 +7,14 @@ metadata:
     instance: marketer-api
 data:
   VERSION: "0.0.1"
-  MONGO_CONNECTION_STRING: "mongodb://root:1219S4OiIhSXPJmOGfmdlFlsQ121@mongo-marketer.pro-marketer-db.svc.cluster.local:27017/"
+  MONGO_CONNECTION_STRING: "mongodb://root:1219S4OiIhSXPJmOGfmdlFlsQ121@mongo-marketer-headless.pro-marketer-db.svc.cluster.local:27017/"
   MONGO_DATABASE: "brokerage"
   SWAGGER_TITLE: "Marketer API"
   API_PREFIX: ""
   DOCS_URL: ""
   OPENAPI_URL: ""
   ROOT_PATH: ""
+  ISSUER: "https://idp.tavanabroker.ir"
 ---
 apiVersion: apps/v1
 kind: Deployment
