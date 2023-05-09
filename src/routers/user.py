@@ -46,7 +46,7 @@ async def get_user_profile(request: Request, args: UserSearchIn = Depends(UserSe
                 "Mobile": 1,
                 "BankAccountNumber": 1,
                 "Username": 1,
-                "TradeCode": 1,
+                "TradeCode": "$PAMCode",
                 "FirstName": 1,
                 "LastName": 1,
                 "_id": 0
