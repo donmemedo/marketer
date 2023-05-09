@@ -25,6 +25,13 @@ class UserIn:
     page_index: int = Query(0)
 
 
+@dataclass
+class UserSearchIn:
+    name: str = Query("", alias="Name")
+    page_index: int = Query(1, alias="PageNumber")
+    page_size: int = Query(5, alias="PageSize")
+
+    
 class UserOut(BaseModel):
     FirstName: Optional[str]
     LastName: Optional[str]
@@ -37,7 +44,6 @@ class UserOut(BaseModel):
 
 @dataclass
 class UsersTotalVolumeIn:
-    # HACK: because Pydantic do not support Jalali Date, I had to use the universal calendar.
     from_date: date = Query(current_date)
     to_date: date = Query(current_date)
     page_index: int = Query(0)
@@ -96,14 +102,12 @@ class UserFee:
 
 @dataclass
 class UserTotalFee:
-    # HACK: because Pydantic do not support Jalali Date, I had to use the universal calendar.
     from_date: date = Query(current_date)
     to_date: date = Query(current_date)
 
 
 @dataclass
 class UsersTotalPureIn:
-    # HACK: because Pydantic do not support Jalali Date, I had to use the universal calendar.
     from_date: str = Query(current_date)
     to_date: str = Query(current_date)
 
@@ -122,23 +126,12 @@ class PureLastNDaysIn:
 
 @dataclass
 class CostIn:
-    insurance: int = Query(0)
-    tax: int = Query(0)
-    salary: int = Query(0)
-    collateral: int = Query(0)
-    from_date: str = Query(current_date)
-    to_date: str = Query(current_date)
-
-@dataclass
-class SubCostIn:
-    first_name: str = Query("")
-    last_name: str = Query("")
-    phone: str = Query("")
-    mobile: str = Query("")
-    user_id: str = Query("")
-    username: str = Query("")
-    from_date: str = Query(current_date)
-    to_date: str = Query(current_date)
+    insurance: int = Query(0, alias="Insurance")
+    tax: int = Query(0, alias="Tax")
+    salary: int = Query(0, alias="Salary")
+    collateral: int = Query(0, alias="Collateral")
+    from_date: str = Query(current_date, alias="StartDate")
+    to_date: str = Query(current_date, alias="EndDate")
 
 
 @dataclass
@@ -212,7 +205,6 @@ class SubUserOut(BaseModel):
 class MarketerIn:
     first_name: str = Query("")
     last_name: str = Query("")
-    # marketer_name: str = Query("")
     register_date: str = Query("")
     phone: str = Query("")
     mobile: str = Query("")

@@ -1,14 +1,11 @@
 from datetime import timedelta, datetime
 from khayyam import JalaliDatetime as jd
 from fastapi import Depends, APIRouter, Request
-from fastapi_pagination import Page, add_pagination
-from fastapi_pagination.ext.pymongo import paginate
 from serializers import marketer_entity
 from database import get_database
 from tokens import JWTBearer, get_sub
-from schemas import CostIn, MarketerInvitationOut, MarketerInvitationIn, MarketerIdpIdIn
+from schemas import CostIn, MarketerInvitationIn, MarketerIdpIdIn, ResponseOut
 from tools import to_gregorian_, peek
-from pdf import pdf_maker
 
 
 plan_router = APIRouter(prefix='/marketer', tags=['Marketer'])
@@ -18,38 +15,37 @@ plan_router = APIRouter(prefix='/marketer', tags=['Marketer'])
 async def get_marketer_profile(request: Request):
     marketer_id = get_sub(request)
     brokerage = get_database()
-    marketers_coll = brokerage["marketers"]
 
-    # check if marketer exists and return his name
-    query_result = marketers_coll.find({"IdpId": marketer_id})
-    marketer_dict = next(query_result, None)
-    return marketer_entity(marketer_dict)
+    result = brokerage.marketers.find_one({"IdpId": marketer_id}, 
+                                          {'_id': 0}
+                                        )
+
+    if result:
+        return ResponseOut(timeGenerated=datetime.now(),
+                           result=result,
+                           error="")
+    else:    
+        return ResponseOut(timeGenerated=datetime.now(),
+                           result={},
+                           error="")
 
 
 @plan_router.get("/cost/", dependencies=[Depends(JWTBearer())])
 async def cal_marketer_cost(request: Request, args: CostIn = Depends(CostIn)):
-    # get user id
     marketer_id = get_sub(request)
     brokerage = get_database()
-    customers_coll = brokerage["customers"]
-    trades_coll = brokerage["trades"]
-    marketers_coll = brokerage["marketers"]
-    factor_coll = brokerage["factor"]
 
     # check if marketer exists and return his name
-    query_result = marketers_coll.find({"IdpId": marketer_id})
-    marketer_dict = peek(query_result)
+    marketer_dict = brokerage.marketers.find_one({"IdpId": marketer_id}, {"_id": 0})
 
-    # Check if customer exist
-    query = {"$and": [
-        {"Referer": {"$regex": marketer_dict.get("FirstName")}}
-        ]
-    }
+    query = {"Referer": {"$regex": marketer_dict.get("FirstName")}}
 
     fields = {"PAMCode": 1}
 
-    customers_records = customers_coll.find(query, fields)
+    customers_records = brokerage.customers.find(query, fields)
     trade_codes = [c.get('PAMCode') for c in customers_records]
+
+    # transform dates
     from_gregorian_date = to_gregorian_(args.from_date)
     to_gregorian_date = to_gregorian_(args.to_date)
     to_gregorian_date = datetime.strptime(to_gregorian_date, "%Y-%m-%d") + timedelta(days=1)
@@ -147,8 +143,8 @@ async def cal_marketer_cost(request: Request, args: CostIn = Depends(CostIn)):
         }
     ]
 
-    buy_agg_result = peek(trades_coll.aggregate(pipeline=buy_pipeline))
-    sell_agg_result = peek(trades_coll.aggregate(pipeline=sell_pipeline))
+    buy_agg_result = peek(brokerage.trades.aggregate(pipeline=buy_pipeline))
+    sell_agg_result = peek(brokerage.trades.aggregate(pipeline=sell_pipeline))
 
     marketer_total = {
        "TotalPureVolume": 0,
@@ -254,26 +250,26 @@ async def cal_marketer_cost(request: Request, args: CostIn = Depends(CostIn)):
     two_months_ago_coll = 0
     
     try:
-        factor_coll.insert_one(
+        brokerage.factor.insert_one(
             {"MarketerID": marketer_dict['IdpId'], "ThisMonth": jd.today().month,
              "ThisM_Collateral": collateral, "ThisM_FinalFee": final_fee,
              "LastM_Collateral": "0", "LastM_FinalFee": "0", "2LastM_Collateral": "0",
              "2LastM_FinalFee": "0"})
     except:
         # update database to this month and shift past months
-        if jd.today().month > factor_coll.find_one(
+        if jd.today().month > brokerage.factor.find_one(
                 {"MarketerID": marketer_dict['IdpId']})["ThisMonth"]:
-            this_month_coll = factor_coll.find_one(
+            this_month_coll = brokerage.factor.find_one(
                 {"MarketerID": marketer_dict['IdpId']})["ThisM_Collateral"]
-            one_month_ago_coll = factor_coll.find_one(
+            one_month_ago_coll = brokerage.factor.find_one(
                 {"MarketerID": marketer_dict['IdpId']})["LastM_Collateral"]
-            this_month_fee = factor_coll.find_one(
+            this_month_fee = brokerage.factor.find_one(
                 {"MarketerID": marketer_dict['IdpId']})["ThisM_FinalFee"]
-            one_month_ago_fee = factor_coll.find_one(
+            one_month_ago_fee = brokerage.factor.find_one(
                 {"MarketerID": marketer_dict['IdpId']})["LastM_FinalFee"]
-            two_months_ago_coll = factor_coll.find_one(
+            two_months_ago_coll = brokerage.factor.find_one(
                 {"MarketerID": marketer_dict['IdpId']})["2LastM_Collateral"]
-            factor_coll.update_one(
+            brokerage.factor.update_one(
                 {"MarketerID": marketer_dict['IdpId']},
                 {"$set":
                      {"ThisM_Collateral": collateral, "ThisM_FinalFee": final_fee,
@@ -284,14 +280,14 @@ async def cal_marketer_cost(request: Request, args: CostIn = Depends(CostIn)):
         elif args.to_date == str(jd.today().date()) and\
                 args.from_date == str(jd.today().replace(day=1).date()):
             # just update datas of this month and dont shift past months
-            factor_coll.update_one(
+            brokerage.factor.update_one(
                 {"MarketerID": marketer_dict['IdpId']},
                 {"$set":
                      {"ThisM_Collateral": collateral, "ThisM_FinalFee": final_fee}
                  }
             )
 
-    return {
+    result = {
         "TotalFee": marketer_total.get("TotalFee"),
         "PureFee": pure_fee,
         "MarketerFee": marketer_fee,
@@ -303,6 +299,11 @@ async def cal_marketer_cost(request: Request, args: CostIn = Depends(CostIn)):
         "CollateralOfTwoMonthAgo": two_months_ago_coll,
         "Payment": final_fee + float(two_months_ago_coll)
         }
+    
+    return ResponseOut(timeGenerated=datetime.now(),
+                       result=result,
+                       error=""
+                    )
 
 
 @plan_router.put("/set-invitation-link")
@@ -335,12 +336,4 @@ async def set_marketer_idpid(args: MarketerIdpIdIn = Depends(MarketerIdpIdIn)):
     return marketer_entity(marketer_dict)
 
 
-@plan_router.get("/list-all-marketers/", response_model=Page[MarketerInvitationOut])
-async def list_all_marketers():
-    brokerage = get_database()
-    marketers_coll = brokerage["marketers"]
-
-    return paginate(marketers_coll, {})
-
-
-add_pagination(plan_router)
+# add_pagination(plan_router)
