@@ -12,7 +12,7 @@ from datetime import datetime
 user_router = APIRouter(prefix='/user', tags=['User'])
 
 
-@user_router.get("/search/", dependencies=[Depends(JWTBearer())], response_model=None)
+@user_router.get("/search", dependencies=[Depends(JWTBearer())], response_model=None)
 async def get_user_profile(request: Request, args: UserSearchIn = Depends(UserSearchIn)):
     # get marketer's id
     marketer_id = get_sub(request)

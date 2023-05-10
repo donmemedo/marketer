@@ -11,7 +11,7 @@ from tools import to_gregorian_, peek
 plan_router = APIRouter(prefix='/marketer', tags=['Marketer'])
 
 
-@plan_router.get("/profile/", dependencies=[Depends(JWTBearer())])
+@plan_router.get("/profile", dependencies=[Depends(JWTBearer())])
 async def get_marketer_profile(request: Request):
     marketer_id = get_sub(request)
     brokerage = get_database()
@@ -30,7 +30,7 @@ async def get_marketer_profile(request: Request):
                            error="")
 
 
-@plan_router.get("/cost/", dependencies=[Depends(JWTBearer())])
+@plan_router.get("/cost", dependencies=[Depends(JWTBearer())])
 async def cal_marketer_cost(request: Request, args: CostIn = Depends(CostIn)):
     marketer_id = get_sub(request)
     brokerage = get_database()
@@ -334,6 +334,3 @@ async def set_marketer_idpid(args: MarketerIdpIdIn = Depends(MarketerIdpIdIn)):
     marketer_dict = next(query_result, None)
 
     return marketer_entity(marketer_dict)
-
-
-# add_pagination(plan_router)

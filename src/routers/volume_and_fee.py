@@ -10,7 +10,7 @@ from khayyam import JalaliDatetime
 volume_and_fee_router = APIRouter(prefix='/volume-and-fee', tags=['Volume and Fee'])
 
 
-@volume_and_fee_router.get("/user-total/", dependencies=[Depends(JWTBearer())], response_model=None)
+@volume_and_fee_router.get("/user-total", dependencies=[Depends(JWTBearer())], response_model=None)
 async def get_user_total_trades(request: Request, args: UserTotalIn = Depends(UserTotalIn)):
     brokerage = get_database()
 
