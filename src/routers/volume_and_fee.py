@@ -95,7 +95,12 @@ async def get_user_total_trades(request: Request, args: UserTotalIn = Depends(Us
                     "Username": "$UserProfile.Username",
                     "Mobile": "$UserProfile.Mobile",
                     "RegisterDate": "$UserProfile.RegisterDate",
-                    "BankAccountNumber": "$UserProfile.BankAccountNumber"
+                    "BankAccountNumber": "$UserProfile.BankAccountNumber",
+                    "FirmTitle": "$UserProfile.FirmTitle",
+                    "Telephone": "$UserProfile.Telephone",
+                    "FirmRegisterLocation": "$UserProfile.FirmRegisterLocation",
+                    "Email": "$UserProfile.Email",
+                    "ActivityField": "$UserProfile.ActivityField"
                 }
             }
     ]
@@ -304,7 +309,12 @@ def users_list_by_volume(request: Request, args: UsersListIn = Depends(UsersList
                     "Username": "$UserProfile.Username",
                     "Mobile": "$UserProfile.Mobile",
                     "RegisterDate": "$UserProfile.RegisterDate",
-                    "BankAccountNumber": "$UserProfile.BankAccountNumber"
+                    "BankAccountNumber": "$UserProfile.BankAccountNumber",
+                    "FirmTitle": "$UserProfile.FirmTitle",
+                    "Telephone": "$UserProfile.Telephone",
+                    "FirmRegisterLocation": "$UserProfile.FirmRegisterLocation",
+                    "Email": "$UserProfile.Email",
+                    "ActivityField": "$UserProfile.ActivityField"
                 }
             },
             {
@@ -397,7 +407,9 @@ def users_list_by_volume(request: Request, args: UsersListIn = Depends(UsersList
                     "BankAccountNumber": 1,
                     "FirmTitle": 1,
                     "Telephone": 1,
-                    "FirmRegisterDate": 1
+                    "FirmRegisterDate": 1,
+                    "Email": 1,
+                    "ActivityField": 1
                 }
             },
                 {
