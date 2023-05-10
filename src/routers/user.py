@@ -49,12 +49,18 @@ async def get_user_profile(request: Request, args: UserSearchIn = Depends(UserSe
                 "TradeCode": "$PAMCode",
                 "FirstName": 1,
                 "LastName": 1,
-                "_id": 0
+                "_id": 0,
+                "FirmTitle": 1,
+                "Telephone": 1,
+                "FirmRegisterDate": 1,
+                "Email": 1,
+                "ActivityField": 1
+
             }
         },
         {
             "$match": {
-                "Name": {"$regex": args.name}
+                "$or": [{"Name": {"$regex": args.name}}, {"FirmTitle": {"$regex": args.name}}]
             }
         },
         {
