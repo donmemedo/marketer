@@ -306,7 +306,7 @@ async def cal_marketer_cost(request: Request, args: CostIn = Depends(CostIn)):
                     )
 
 
-@plan_router.put("/set-invitation-link")
+@plan_router.put("/set-invitation-link", dependencies=[Depends(JWTBearer())])
 async def set_marketer_invitation_link(args: MarketerInvitationIn = Depends(MarketerInvitationIn)):
     brokerage = get_database()
     marketers_coll = brokerage["marketers"]
@@ -321,7 +321,7 @@ async def set_marketer_invitation_link(args: MarketerInvitationIn = Depends(Mark
     return marketer_entity(marketer_dict)
 
 
-@plan_router.put("/set-idp-id")
+@plan_router.put("/set-idp-id", dependencies=[Depends(JWTBearer())])
 async def set_marketer_idpid(args: MarketerIdpIdIn = Depends(MarketerIdpIdIn)):
     brokerage = get_database()
     marketers_coll = brokerage["marketers"]
