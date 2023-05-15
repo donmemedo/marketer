@@ -258,3 +258,15 @@ class UsersListIn(Pages):
     user_type: UserTypeEnum = Query(UserTypeEnum.active, alias="UserType")
     from_date: str = Query(current_date, alias="StartDate")
     to_date: str = Query(current_date, alias="EndDate")
+
+
+@dataclass
+class FactorIn:
+    """_summary_
+    """
+    insurance: int = Query(0)
+    tax: int = Query(0)
+    salary: int = Query(0)
+    collateral: int = Query(0)
+    month: str = Query(current_date)
+    year: str = Query(current_date)

@@ -4,7 +4,7 @@ from fastapi import Depends, APIRouter, Request
 from serializers import marketer_entity
 from database import get_database
 from tokens import JWTBearer, get_sub
-from schemas import CostIn, MarketerInvitationIn, MarketerIdpIdIn, ResponseOut
+from schemas import CostIn, MarketerInvitationIn, MarketerIdpIdIn, ResponseOut, FactorIn
 from tools import to_gregorian_, peek
 
 
@@ -334,3 +334,69 @@ async def set_marketer_idpid(args: MarketerIdpIdIn = Depends(MarketerIdpIdIn)):
     marketer_dict = next(query_result, None)
 
     return marketer_entity(marketer_dict)
+
+
+@plan_router.get("/factor-print/", dependencies=[Depends(JWTBearer())])
+async def factor_print(request: Request, args: FactorIn = Depends(FactorIn)):
+    """List All marketers with their Invitation Link
+
+    Returns:
+        _type_: MarketerInvitationOut
+    """
+    marketer_id = get_sub(request)
+
+    brokerage = get_database()
+    marketers_coll = brokerage["marketers"]
+    factors_coll = brokerage["factors"]
+    marketer = factors_coll.find_one({"IdpID": marketer_id})
+    dd=args.year+ f"{int(args.month):02}"
+    cc=args.year+ f"{int(args.month)-2:02}"
+    if args.month =="1" or args.month =="01":
+        cc=str(int(args.year)-1)+ "11"
+    two_months_ago_coll = marketer[cc+"Collateral"]
+    from_date = f"{args.year}-{args.month}-01"
+    from_gregorian_date = to_gregorian_(from_date)
+    to_date = jd.strptime(from_date, "%Y-%m-%d")
+    dorehh = f"{args.year} {to_date.monthname()}"
+    to_date = to_date.replace(day=to_date.daysinmonth).strftime("%Y-%m-%d")
+    to_gregorian_date = to_gregorian_(to_date)
+    to_gregorian_date = datetime.strptime(to_gregorian_date, "%Y-%m-%d") + timedelta(days=1)
+    to_gregorian_date = to_gregorian_date.strftime("%Y-%m-%d")
+
+   # pdf_maker(shobe='تهران', name=marketer["FullName"], doreh=from_date, total_fee=int(marketer[dd+"TF"]),
+   #           pure_fee=int(marketer[dd+"PureFee"]), marketer_fee=int(marketer[dd+"MarFee"]), tax=int(marketer[dd+"Tax"]), colat2=int(two_months_ago_coll), colat=int(marketer[dd+"Collateral"]),
+   #           mandeh= 0, pardakhti=int(marketer[dd+"Payment"]), date=jd.now().strftime('%C'))
+
+    result = {
+        "TotalFee": marketer[dd+"TF"],
+        "TotalPureVolume": marketer[dd+"TPV"],
+        "PureFee": marketer[dd+"PureFee"],
+        "MarketerFee": marketer[dd+"MarFee"],
+        "Plan": marketer[dd+"Plan"],
+        # "Next Plan": next_plan,
+        "Tax": marketer[dd+"Tax"],
+        "Collateral": marketer[dd+"Collateral"],
+        "FinalFee": marketer[dd+"FinalFee"],
+        "CollateralOfTwoMonthAgo": two_months_ago_coll,
+        "Payment": marketer[dd+"Payment"]
+        }
+    
+    return ResponseOut(timeGenerated=datetime.now(),
+                       result=result,
+                       error=""
+                    )
+
+    
+    # return {
+    #     "TotalFee": marketer[dd+"TF"],
+    #     "TotalPureVolume": marketer[dd+"TPV"],
+    #     "PureFee": marketer[dd+"PureFee"],
+    #     "MarketerFee": marketer[dd+"MarFee"],
+    #     "Plan": marketer[dd+"Plan"],
+    #     # "Next Plan": next_plan,
+    #     "Tax": marketer[dd+"Tax"],
+    #     "Collateral": marketer[dd+"Collateral"],
+    #     "FinalFee": marketer[dd+"FinalFee"],
+    #     "CollateralOfTwoMonthAgo": two_months_ago_coll,
+    #     "Payment": marketer[dd+"Payment"]
+    # }
