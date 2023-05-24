@@ -1,5 +1,7 @@
 FROM registry.tech1a.co:81/repository/tech1a-docker-registry/python/python:3.9
 
+ENV TZ=Asia/Tehran
+
 COPY . /app
 
 WORKDIR /app
