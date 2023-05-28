@@ -2,10 +2,10 @@ from datetime import timedelta, datetime
 from khayyam import JalaliDatetime as jd
 from fastapi import Depends, APIRouter, Request
 from serializers import marketer_entity
-from database import get_database
-from tokens import JWTBearer, get_sub
-from schemas import CostIn, MarketerInvitationIn, MarketerIdpIdIn, ResponseOut, FactorIn
-from tools import to_gregorian_, peek
+from tools.database import get_database
+from tools.tokens import JWTBearer, get_sub
+from schemas.schemas import CostIn, MarketerInvitationIn, MarketerIdpIdIn, ResponseOut, FactorIn
+from tools.utils import to_gregorian_, peek
 
 
 plan_router = APIRouter(prefix='/marketer', tags=['Marketer'])
@@ -363,17 +363,12 @@ async def factor_print(request: Request, args: FactorIn = Depends(FactorIn)):
     to_gregorian_date = datetime.strptime(to_gregorian_date, "%Y-%m-%d") + timedelta(days=1)
     to_gregorian_date = to_gregorian_date.strftime("%Y-%m-%d")
 
-   # pdf_maker(shobe='تهران', name=marketer["FullName"], doreh=from_date, total_fee=int(marketer[dd+"TF"]),
-   #           pure_fee=int(marketer[dd+"PureFee"]), marketer_fee=int(marketer[dd+"MarFee"]), tax=int(marketer[dd+"Tax"]), colat2=int(two_months_ago_coll), colat=int(marketer[dd+"Collateral"]),
-   #           mandeh= 0, pardakhti=int(marketer[dd+"Payment"]), date=jd.now().strftime('%C'))
-
     result = {
         "TotalFee": marketer[dd+"TF"],
         "TotalPureVolume": marketer[dd+"TPV"],
         "PureFee": marketer[dd+"PureFee"],
         "MarketerFee": marketer[dd+"MarFee"],
         "Plan": marketer[dd+"Plan"],
-        # "Next Plan": next_plan,
         "Tax": marketer[dd+"Tax"],
         "Collateral": marketer[dd+"Collateral"],
         "FinalFee": marketer[dd+"FinalFee"],
@@ -385,18 +380,3 @@ async def factor_print(request: Request, args: FactorIn = Depends(FactorIn)):
                        result=result,
                        error=""
                     )
-
-    
-    # return {
-    #     "TotalFee": marketer[dd+"TF"],
-    #     "TotalPureVolume": marketer[dd+"TPV"],
-    #     "PureFee": marketer[dd+"PureFee"],
-    #     "MarketerFee": marketer[dd+"MarFee"],
-    #     "Plan": marketer[dd+"Plan"],
-    #     # "Next Plan": next_plan,
-    #     "Tax": marketer[dd+"Tax"],
-    #     "Collateral": marketer[dd+"Collateral"],
-    #     "FinalFee": marketer[dd+"FinalFee"],
-    #     "CollateralOfTwoMonthAgo": two_months_ago_coll,
-    #     "Payment": marketer[dd+"Payment"]
-    # }

@@ -1,5 +1,5 @@
 from pymongo import MongoClient
-from config import setting
+from tools.config import setting
 
 
 def get_database():

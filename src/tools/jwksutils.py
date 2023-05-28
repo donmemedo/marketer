@@ -1,8 +1,3 @@
-"""_summary_
-
-Returns:
-    _type_: _description_
-"""
 import base64
 from cryptography.hazmat.primitives.asymmetric.rsa import RSAPublicNumbers
 from cryptography.hazmat.backends import default_backend
@@ -10,41 +5,17 @@ from cryptography.hazmat.primitives import serialization
 
 
 def ensure_bytes(key):
-    """_summary_
-
-    Args:
-        key (_type_): _description_
-
-    Returns:
-        _type_: _description_
-    """
     if isinstance(key, str):
         key = key.encode('utf-8')
     return key
 
 
 def decode_value(val):
-    """_summary_
-
-    Args:
-        val (_type_): _description_
-
-    Returns:
-        _type_: _description_
-    """
     decoded = base64.urlsafe_b64decode(ensure_bytes(val) + b'==')
     return int.from_bytes(decoded, 'big')
 
 
 def rsa_pem_from_jwk(jwk):
-    """_summary_
-
-    Args:
-        jwk (_type_): _description_
-
-    Returns:
-        _type_: _description_
-    """
     return RSAPublicNumbers(
         n=decode_value(jwk['n']),
         e=decode_value(jwk['e'])

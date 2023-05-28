@@ -2,8 +2,8 @@ import jwt
 from fastapi import Request, HTTPException, status
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 # This module contains the piece of code described previously
-from jwksutils import rsa_pem_from_jwk
-from config import setting
+from tools.jwksutils import rsa_pem_from_jwk
+from tools.config import setting
 from jwt.exceptions import InvalidIssuerError, ExpiredSignatureError
 
 # obtain jwks as you wish: configuration file, HTTP GET request to the endpoint returning them;
@@ -56,6 +56,8 @@ def validate_jwt(jwt_to_validate):
         print("Signature has expired")
     except Exception as error:
         print("Wrong JWT", error)
+    finally:
+        print(decoded)
     
     return False
 
