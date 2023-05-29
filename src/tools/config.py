@@ -10,8 +10,8 @@ class Settings(BaseSettings):
     DOCS_URL = ""
     OPENAPI_URL = ""
     ROOT_PATH = ""
-    JWKS = ""
+    JWKS_CONFIGURATION_URL = "https://cluster.tech1a.co/.well-known/openid-configuration/jwks"
     ISSUER = "https://cluster.tech1a.co"
-
+    APPLICATION_ID = "d7f48c21-2a19-4bdb-ace8-48928bff0eb5"
 
 setting = Settings()
