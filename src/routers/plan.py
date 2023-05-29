@@ -307,11 +307,6 @@ async def cal_marketer_cost(request: Request, args: CostIn = Depends(CostIn)):
 
 @plan_router.get("/factor-print/", dependencies=[Depends(JWTBearer())])
 async def factor_print(request: Request, args: FactorIn = Depends(FactorIn)):
-    """List All marketers with their Invitation Link
-
-    Returns:
-        _type_: MarketerInvitationOut
-    """
     marketer_id = get_sub(request)
 
     brokerage = get_database()
