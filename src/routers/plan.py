@@ -1,10 +1,9 @@
 from datetime import timedelta, datetime
 from khayyam import JalaliDatetime as jd
 from fastapi import Depends, APIRouter, Request
-from serializers import marketer_entity
 from tools.database import get_database
 from tools.tokens import JWTBearer, get_sub
-from schemas.schemas import CostIn, MarketerInvitationIn, MarketerIdpIdIn, ResponseOut, FactorIn
+from schemas.schemas import CostIn, ResponseOut, FactorIn
 from tools.utils import to_gregorian_, peek
 
 
