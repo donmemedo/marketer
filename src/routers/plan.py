@@ -306,36 +306,6 @@ async def cal_marketer_cost(request: Request, args: CostIn = Depends(CostIn)):
                     )
 
 
-@plan_router.put("/set-invitation-link", dependencies=[Depends(JWTBearer())])
-async def set_marketer_invitation_link(args: MarketerInvitationIn = Depends(MarketerInvitationIn)):
-    brokerage = get_database()
-    marketers_coll = brokerage["marketers"]
-
-    smil_filter = {"Id": args.id}
-    update = {"$set": {"InvitationLink": args.invitation_link}}
-
-    marketers_coll.update_one(smil_filter, update)
-    query_result = marketers_coll.find(smil_filter)
-    marketer_dict = next(query_result, None)
-
-    return marketer_entity(marketer_dict)
-
-
-@plan_router.put("/set-idp-id", dependencies=[Depends(JWTBearer())])
-async def set_marketer_idpid(args: MarketerIdpIdIn = Depends(MarketerIdpIdIn)):
-    brokerage = get_database()
-    marketers_coll = brokerage["marketers"]
-
-    smi_filter = {"Id": args.id}
-    update = {"$set": {"IdpId": args.idpid}}
-
-    marketers_coll.update_one(smi_filter, update)
-    query_result = marketers_coll.find(smi_filter)
-    marketer_dict = next(query_result, None)
-
-    return marketer_entity(marketer_dict)
-
-
 @plan_router.get("/factor-print/", dependencies=[Depends(JWTBearer())])
 async def factor_print(request: Request, args: FactorIn = Depends(FactorIn)):
     """List All marketers with their Invitation Link
