@@ -7,7 +7,7 @@ from jwt.exceptions import InvalidIssuerError, ExpiredSignatureError
 from requests.exceptions import ConnectionError
 import requests
 from json import loads
-
+from src.tools.logger import logger
 
 valid_audiences = [setting.APPLICATION_ID] # id of the application prepared previously
 
@@ -18,11 +18,11 @@ try:
         jwks = loads(jwks_req.content)
 
 except ConnectionError as err:
-    print("Cannot connect to get IDP configurations...")
+    logger.error("Cannot connect to get IDP configurations")
 except Exception as err:
-    print(f"Error in getting IDP Configurations: {err}") 
+    logger.error(f"Error in getting IDP Configurations: {err}") 
 else:
-    print("Successfully got the IDP configurations...")
+    logger.info("Successfully got the IDP configurations")
 
 
 class InvalidAuthorizationToken(Exception):
@@ -63,11 +63,11 @@ def validate_jwt(jwt_to_validate):
                              issuer=setting.ISSUER)
         return True
     except InvalidIssuerError as err:
-        print("Invalid Issuer")
+        logger.info("Invalid issuer")
     except ExpiredSignatureError as err:
-        print("Signature has expired")
+        logger.info("Signature has expired")
     except Exception as error:
-        print("Wrong JWT", error)
+        logger.info(f"Wrong JWT {error}")
     
     return False
 
