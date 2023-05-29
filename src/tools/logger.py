@@ -54,5 +54,6 @@ log_config = {
     },
 }
 
+
 dictConfig(log_config)
 logger = logging.getLogger("marketer-client")

@@ -9,7 +9,7 @@ from routers.user import user_router
 app = FastAPI(
     version=setting.VERSION,
     title=setting.SWAGGER_TITLE,
-    )
+)
 
 origins = ["*"]
 
@@ -20,6 +20,11 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+
+@app.get("/health-check", tags=["Deafult"])
+def health_check():
+    return {"status": "OK"}
 
 
 # Add all routers
