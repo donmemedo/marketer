@@ -247,44 +247,7 @@ async def cal_marketer_cost(request: Request, args: CostIn = Depends(CostIn)):
         tax = marketer_fee * 0.1
         final_fee -= final_fee * 0.15
     two_months_ago_coll = 0
-    
-    try:
-        brokerage.factor.insert_one(
-            {"MarketerID": marketer_dict['IdpId'], "ThisMonth": jd.today().month,
-             "ThisM_Collateral": collateral, "ThisM_FinalFee": final_fee,
-             "LastM_Collateral": "0", "LastM_FinalFee": "0", "2LastM_Collateral": "0",
-             "2LastM_FinalFee": "0"})
-    except:
-        # update database to this month and shift past months
-        if jd.today().month > brokerage.factor.find_one(
-                {"MarketerID": marketer_dict['IdpId']})["ThisMonth"]:
-            this_month_coll = brokerage.factor.find_one(
-                {"MarketerID": marketer_dict['IdpId']})["ThisM_Collateral"]
-            one_month_ago_coll = brokerage.factor.find_one(
-                {"MarketerID": marketer_dict['IdpId']})["LastM_Collateral"]
-            this_month_fee = brokerage.factor.find_one(
-                {"MarketerID": marketer_dict['IdpId']})["ThisM_FinalFee"]
-            one_month_ago_fee = brokerage.factor.find_one(
-                {"MarketerID": marketer_dict['IdpId']})["LastM_FinalFee"]
-            two_months_ago_coll = brokerage.factor.find_one(
-                {"MarketerID": marketer_dict['IdpId']})["2LastM_Collateral"]
-            brokerage.factor.update_one(
-                {"MarketerID": marketer_dict['IdpId']},
-                {"$set":
-                     {"ThisM_Collateral": collateral, "ThisM_FinalFee": final_fee,
-                      "LastM_Collateral": this_month_coll, "LastM_FinalFee": this_month_fee,
-                      "2LastM_Collateral": one_month_ago_coll, "2LastM_FinalFee": one_month_ago_fee}
-                 }
-            )
-        elif args.to_date == str(jd.today().date()) and\
-                args.from_date == str(jd.today().replace(day=1).date()):
-            # just update datas of this month and dont shift past months
-            brokerage.factor.update_one(
-                {"MarketerID": marketer_dict['IdpId']},
-                {"$set":
-                     {"ThisM_Collateral": collateral, "ThisM_FinalFee": final_fee}
-                 }
-            )
+
 
     result = {
         "TotalFee": marketer_total.get("TotalFee"),
