@@ -13,7 +13,7 @@ class Settings(BaseSettings):
     JWKS_CONFIGURATION_URL = "https://cluster.tech1a.co/.well-known/openid-configuration/jwks"
     ISSUER = "https://cluster.tech1a.co"
     APPLICATION_ID = "d7f48c21-2a19-4bdb-ace8-48928bff0eb5"
-    SPLUNK_HOST = "log.tech1a.co"
+    SPLUNK_HOST = "https://log.tech1a.co"
     SPLUNK_PORT = 5142
     SPLUNK_INDEX = "stg"
 
