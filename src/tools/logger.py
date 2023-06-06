@@ -22,6 +22,9 @@ log_config = {
         'json': {
             '()': 'pythonjsonlogger.jsonlogger.JsonFormatter',
             'format': '%(asctime)s %(created)f %(exc_info)s %(filename)s %(funcName)s %(levelname)s %(levelno)s %(lineno)d %(module)s %(message)s %(pathname)s %(process)s %(processName)s %(relativeCreated)d %(thread)s %(threadName)s'
+        },
+        'simple': {
+            'format': '%(asctime)s %(levelname)s %(message)s'
         }
     },
     "filters": {
@@ -45,7 +48,7 @@ log_config = {
             'class': 'logging.handlers.DatagramHandler',
             'host': setting.SPLUNK_HOST,
             'port': setting.SPLUNK_PORT,
-            'formatter': 'json',
+            'formatter': 'simple',
             'filters': ["splunk_index"]
         }
     },
