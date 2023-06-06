@@ -3,6 +3,16 @@ import logging
 from tools.config import setting
 
 
+class SplunkIndexFilter(logging.Filter):
+    def __init__(self, index) -> None:
+        super().__init__()
+        self.index = index
+
+    def filter(self, record):
+        record.index  = self.index
+        return True
+
+
 log_config = {
     "version": 1,
     "disable_existing_loggers": False,
@@ -29,7 +39,7 @@ log_config = {
     },
     "filters": {
         "splunk_index": {
-            "()": "logging.Filter",
+            "()": SplunkIndexFilter,
             "index": setting.SPLUNK_INDEX
         }
     },
