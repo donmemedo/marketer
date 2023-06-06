@@ -27,7 +27,6 @@ log_config = {
     "filters": {
         "splunk_index": {
             "()": "logging.Filter",
-            "name": "splunk_index",
             "index": setting.SPLUNK_INDEX
         }
     },
@@ -44,14 +43,10 @@ log_config = {
         },
         "splunk": {
             'class': 'logging.handlers.DatagramHandler',
-            'formatter': 'json',
             'host': setting.SPLUNK_HOST,
             'port': setting.SPLUNK_PORT,
-            'filters': [{
-                'type': 'logging.Filter', 
-                'name': 'splunk_index', 
-                'index': setting.SPLUNK_INDEX
-            }]
+            'formatter': 'json',
+            'filters': ["splunk_index"]
         }
     },
     "loggers": {
