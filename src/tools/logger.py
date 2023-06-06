@@ -42,6 +42,8 @@ log_config = {
             'host': setting.SPLUNK_HOST,
             'port': setting.SPLUNK_PORT,
             'protocol': 'http',
+            'timeout': 180,
+            'debug': True,
             'token': "",
             'index': setting.SPLUNK_INDEX,
             'sourcetype': 'json'
