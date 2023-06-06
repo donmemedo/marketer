@@ -24,6 +24,13 @@ log_config = {
             'format': '%(asctime)s %(created)f %(exc_info)s %(filename)s %(funcName)s %(levelname)s %(levelno)s %(lineno)d %(module)s %(message)s %(pathname)s %(process)s %(processName)s %(relativeCreated)d %(thread)s %(threadName)s'
         }
     },
+    "filters": {
+        "splunk_index": {
+            "()": "logging.Filter",
+            "name": "splunk_index",
+            "index": setting.SPLUNK_INDEX
+        }
+    },
     "handlers": {
         'access': {
             'class': 'logging.StreamHandler',
@@ -36,18 +43,15 @@ log_config = {
             "stream": "ext://sys.stderr",
         },
         "splunk": {
-            'level': 'DEBUG',
-            'class': 'splunk_handler.SplunkHandler',
+            'class': 'logging.handlers.DatagramHandler',
             'formatter': 'json',
             'host': setting.SPLUNK_HOST,
             'port': setting.SPLUNK_PORT,
-            'protocol': 'http',
-            'timeout': 180,
-            'debug': True,
-            'token': '',
-            'index': setting.SPLUNK_INDEX,
-            'sourcetype': 'json',
-            'source': ''
+            'filters': [{
+                'type': 'logging.Filter', 
+                'name': 'splunk_index', 
+                'index': setting.SPLUNK_INDEX
+            }]
         }
     },
     "loggers": {
