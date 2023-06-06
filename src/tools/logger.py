@@ -44,9 +44,10 @@ log_config = {
             'protocol': 'http',
             'timeout': 180,
             'debug': True,
-            'token': "",
+            'token': '',
             'index': setting.SPLUNK_INDEX,
-            'sourcetype': 'json'
+            'sourcetype': 'json',
+            'source': ''
         }
     },
     "loggers": {
