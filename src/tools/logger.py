@@ -41,9 +41,10 @@ log_config = {
             'formatter': 'json',
             'host': setting.SPLUNK_HOST,
             'port': setting.SPLUNK_PORT,
+            'protocol': 'http',
             'token': "",
             'index': setting.SPLUNK_INDEX,
-            'sourcetype': 'json',
+            'sourcetype': 'json'
         }
     },
     "loggers": {
