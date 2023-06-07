@@ -1,4 +1,3 @@
-import os
 import jwt
 from fastapi import Request, HTTPException, status
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
@@ -20,12 +19,8 @@ try:
 
 except ConnectionError as err:
     logger.error("Cannot connect to get IDP configurations")
-    logger.exception("Cannot connect to get IDP configurations")
-    os.kill(os.getpid(), 9)
 except Exception as err:
     logger.error(f"Error in getting IDP Configurations: {err}") 
-    logger.exception(f"Error in getting IDP Configurations: {err}") 
-    os.kill(os.getpid(), 9)
 else:
     logger.info("Successfully got the IDP configurations")
 
