@@ -7,7 +7,7 @@ from jwt.exceptions import InvalidIssuerError, ExpiredSignatureError
 from requests.exceptions import ConnectionError
 import requests
 from json import loads
-from src.tools.logger import logger
+from tools.logger import logger
 
 valid_audiences = [setting.APPLICATION_ID] # id of the application prepared previously
 
