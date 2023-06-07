@@ -14,7 +14,7 @@ class Settings(BaseSettings):
     ISSUER = "https://cluster.tech1a.co"
     APPLICATION_ID = "d7f48c21-2a19-4bdb-ace8-48928bff0eb5"
     SPLUNK_HOST = "172.24.65.206"
-    SPLUNK_PORT = 5142
-    SPLUNK_INDEX = "STG"
+    SPLUNK_PORT = 5141
+
 
 setting = Settings()

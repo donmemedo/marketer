@@ -1,6 +1,7 @@
 from logging.config import dictConfig
 import logging
 from tools.config import setting
+import socket
 
 
 class SplunkIndexFilter(logging.Filter):
@@ -37,12 +38,6 @@ log_config = {
             'format': '%(asctime)s %(levelname)s %(message)s'
         }
     },
-    "filters": {
-        "splunk_index": {
-            "()": SplunkIndexFilter,
-            "index": setting.SPLUNK_INDEX
-        }
-    },
     "handlers": {
         'access': {
             'class': 'logging.StreamHandler',
@@ -55,12 +50,11 @@ log_config = {
             "stream": "ext://sys.stderr",
         },
         "splunk": {
-            'class': 'logging.handlers.DatagramHandler',
-            'host': setting.SPLUNK_HOST,
-            'port': setting.SPLUNK_PORT,
-            'formatter': 'simple',
-            'filters': ["splunk_index"]
-        }
+            "class": "logging.handlers.SysLogHandler",
+            "address": (setting.SPLUNK_HOST, setting.SPLUNK_PORT),
+            "socktype": socket.SOCK_DGRAM,
+            "formatter": "simple"
+            }
     },
     "loggers": {
         "marketer-client": {
