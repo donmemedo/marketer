@@ -13,10 +13,14 @@ user_router = APIRouter(prefix='/user', tags=['User'])
 
 
 @user_router.get("/search", dependencies=[Depends(JWTBearer())], response_model=None)
-async def get_user_profile(request: Request, args: UserSearchIn = Depends(UserSearchIn)):
+async def get_user_profile(
+    request: Request, 
+    args: UserSearchIn = Depends(UserSearchIn), 
+    brokerage: get_database = Depends(get_database)
+    ):
+
     # get marketer's id
     marketer_id = get_sub(request)
-    brokerage = get_database()
 
     # check whether marketer exists or not and return his name
     query_result = brokerage.marketers.find({"IdpId": marketer_id})

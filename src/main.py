@@ -6,6 +6,8 @@ from routers.plan import plan_router
 from routers.user import user_router
 from routers.volume_and_fee import volume_and_fee_router
 from tools.config import setting
+from tools.database import get_database
+
 
 app = FastAPI(
     version=setting.VERSION,
@@ -23,6 +25,11 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+
+@app.on_event("startup")
+async def startup_events():
+    get_database()
 
 
 @app.get("/health-check", tags=["Deafult"])
