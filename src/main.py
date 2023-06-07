@@ -4,14 +4,17 @@ from tools.config import setting
 from routers.plan import plan_router
 from routers.volume_and_fee import volume_and_fee_router
 from routers.user import user_router
+import uvicorn
 
 
 app = FastAPI(
     version=setting.VERSION,
     title=setting.SWAGGER_TITLE,
+    docs_url=setting.FASTAPI_DOCS,
+    redoc_url=setting.FASTAPI_REDOC
 )
 
-origins = ["*"]
+origins = [setting.ORIGINS]
 
 app.add_middleware(
     CORSMiddleware,
@@ -31,3 +34,7 @@ def health_check():
 app.include_router(plan_router, prefix="")
 app.include_router(volume_and_fee_router, prefix="")
 app.include_router(user_router, prefix="")
+
+
+if __name__ == "__main__":
+    uvicorn.run(host="0.0.0.0", port=8000)

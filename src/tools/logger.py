@@ -4,23 +4,13 @@ from tools.config import setting
 import socket
 
 
-class SplunkIndexFilter(logging.Filter):
-    def __init__(self, index) -> None:
-        super().__init__()
-        self.index = index
-
-    def filter(self, record):
-        record.index  = self.index
-        return True
-
-
 log_config = {
     "version": 1,
     "disable_existing_loggers": False,
     "formatters": {
-        'access': {
-            '()': 'uvicorn.logging.AccessFormatter',
-            'fmt': '%(levelprefix)s %(asctime)s - %(client_addr)s - "%(request_line)s" %(status_code)s',
+        "access": {
+            "()": "uvicorn.logging.AccessFormatter",
+            "fmt": '%(levelprefix)s %(asctime)s - %(client_addr)s - "%(request_line)s" %(status_code)s',
             "datefmt": "%Y-%m-%d %H:%M:%S",
             "use_colors": True
         },
@@ -30,19 +20,19 @@ log_config = {
             "datefmt": "%Y-%m-%d %H:%M:%S",
             "use_colors": True
         },
-        'json': {
-            '()': 'pythonjsonlogger.jsonlogger.JsonFormatter',
-            'format': '%(asctime)s %(created)f %(exc_info)s %(filename)s %(funcName)s %(levelname)s %(levelno)s %(lineno)d %(module)s %(message)s %(pathname)s %(process)s %(processName)s %(relativeCreated)d %(thread)s %(threadName)s'
+        "json": {
+            "()": "pythonjsonlogger.jsonlogger.JsonFormatter",
+            "format": "%(asctime)s %(created)f %(exc_info)s %(filename)s %(funcName)s %(levelname)s %(levelno)s %(lineno)d %(module)s %(message)s %(pathname)s %(process)s %(processName)s %(relativeCreated)d %(thread)s %(threadName)s"
         },
-        'simple': {
-            'format': '%(asctime)s %(levelname)s %(message)s'
+        "simple": {
+            "format": "%(asctime)s %(levelname)s %(message)s"
         }
     },
     "handlers": {
-        'access': {
-            'class': 'logging.StreamHandler',
-            'formatter': 'access',
-            'stream': 'ext://sys.stdout'
+        "access": {
+            "class": "logging.StreamHandler",
+            "formatter": "access",
+            "stream": "ext://sys.stdout"
         },
         "default": {
             "formatter": "default",
@@ -58,23 +48,23 @@ log_config = {
     },
     "loggers": {
         "marketer-client": {
-            "handlers": ['default', 'splunk'],
+            "handlers": ["default", "splunk"],
             "level": "DEBUG",
             "propagate": False
         },
         "uvicorn": {
-            "handlers": ['default', 'splunk'],
+            "handlers": ["default", "splunk"],
             "level": "DEBUG",
             "propagate": True
         },
-        'uvicorn.access': {
-            'handlers': ['access', 'splunk'],
-            'level': 'INFO',
-            'propagate': False
+        "uvicorn.access": {
+            "handlers": ["access", "splunk"],
+            "level": "INFO",
+            "propagate": False
         },
-        'uvicorn.error': {
-            'level': 'INFO',
-            'propagate': False
+        "uvicorn.error": {
+            "level": "INFO",
+            "propagate": False
         }
     },
 }

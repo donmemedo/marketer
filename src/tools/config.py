@@ -15,6 +15,9 @@ class Settings(BaseSettings):
     APPLICATION_ID = "d7f48c21-2a19-4bdb-ace8-48928bff0eb5"
     SPLUNK_HOST = "172.24.65.206"
     SPLUNK_PORT = 5141
+    FASTAPI_DOCS = '/docs'
+    FASTAPI_REDOC = '/redoc'
+    ORIGINS = '*'
 
 
 setting = Settings()
