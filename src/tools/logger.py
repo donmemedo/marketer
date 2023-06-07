@@ -1,5 +1,5 @@
-from logging.config import dictConfig
 import logging
+from logging.config import dictConfig
 from tools.config import setting
 import socket
 
@@ -53,7 +53,7 @@ log_config = {
             "class": "logging.handlers.SysLogHandler",
             "address": (setting.SPLUNK_HOST, setting.SPLUNK_PORT),
             "socktype": socket.SOCK_DGRAM,
-            "formatter": "simple"
+            "formatter": "json"
             }
     },
     "loggers": {
