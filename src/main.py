@@ -1,11 +1,11 @@
+import uvicorn
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from tools.config import setting
-from routers.plan import plan_router
-from routers.volume_and_fee import volume_and_fee_router
-from routers.user import user_router
-import uvicorn
 
+from routers.plan import plan_router
+from routers.user import user_router
+from routers.volume_and_fee import volume_and_fee_router
+from tools.config import setting
 
 app = FastAPI(
     version=setting.VERSION,
@@ -37,4 +37,4 @@ app.include_router(user_router, prefix="")
 
 
 if __name__ == "__main__":
-    uvicorn.run(host="0.0.0.0", port=8000)
+    uvicorn.run(app=app, host="0.0.0.0", port=8000)
