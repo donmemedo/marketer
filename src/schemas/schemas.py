@@ -1,9 +1,9 @@
 from dataclasses import dataclass
+from enum import Enum, IntEnum
+from typing import Any, Dict, List
+
 from fastapi import Query
 from khayyam import JalaliDatetime
-from enum import Enum, IntEnum
-from typing import Any, List, Dict
-
 
 current_date = JalaliDatetime.today().replace(day=1).strftime("%Y-%m-%d")
 

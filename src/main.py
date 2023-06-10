@@ -1,11 +1,11 @@
 import uvicorn
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-
 from routers.plan import plan_router
 from routers.user import user_router
 from routers.volume_and_fee import volume_and_fee_router
 from tools.config import setting
+from tools.logger import logger
 
 app = FastAPI(
     version=setting.VERSION,

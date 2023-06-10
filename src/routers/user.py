@@ -1,13 +1,13 @@
+from datetime import datetime
+
 from fastapi import APIRouter, Depends, Request
 from fastapi_pagination import Page, add_pagination
 from fastapi_pagination.ext.pymongo import paginate
-from tools.utils import peek, get_marketer_name
-from schemas.schemas import UserSearchIn, ResponseListOut
+from pymongo import ASCENDING
+from schemas.schemas import ResponseListOut, UserSearchIn
 from tools.database import get_database
 from tools.tokens import JWTBearer, get_sub
-from pymongo import ASCENDING
-from datetime import datetime
-
+from tools.utils import get_marketer_name, peek
 
 user_router = APIRouter(prefix='/user', tags=['User'])
 
