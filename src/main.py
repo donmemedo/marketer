@@ -5,7 +5,9 @@ from routers.plan import plan_router
 from routers.user import user_router
 from routers.volume_and_fee import volume_and_fee_router
 from tools.config import setting
-from tools.logger import logger
+from tools.logger import log_config
+from logging.config import dictConfig
+
 
 app = FastAPI(
     version=setting.VERSION,
@@ -37,4 +39,4 @@ app.include_router(user_router, prefix="")
 
 
 if __name__ == "__main__":
-    uvicorn.run(app=app, host="0.0.0.0", port=8000)
+    uvicorn.run("main:app", host="0.0.0.0", port=8000, log_config=dictConfig(log_config))
