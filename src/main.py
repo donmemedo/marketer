@@ -41,4 +41,4 @@ app.include_router(user_router, prefix="")
 
 
 if __name__ == "__main__":
-    uvicorn.run(host="0.0.0.0", port=8000, log_config=dictConfig(log_config))
+    uvicorn.run(app=app, host="0.0.0.0", port=8000, log_config=dictConfig(log_config))
