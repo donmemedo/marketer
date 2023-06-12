@@ -16,7 +16,7 @@ data:
   ROOT_PATH: ""
   ISSUER: "https://idp.tavanabroker.ir"
   SPLUNK_HOST: "log.tech1a.co"
-  SPLUNK_PORT: 6141
+  SPLUNK_PORT: "6141"
 ---
 apiVersion: apps/v1
 kind: Deployment
