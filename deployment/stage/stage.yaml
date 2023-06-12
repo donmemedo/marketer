@@ -15,6 +15,8 @@ data:
   OPENAPI_URL: ""
   ROOT_PATH: ""
   ISSUER: "https://cluster.tech1a.co"
+  SPLUNK_HOST: "log.tech1a.co"
+  SPLUNK_PORT: 5142
 ---
 apiVersion: apps/v1
 kind: Deployment
