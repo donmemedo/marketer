@@ -1,53 +1,52 @@
 from datetime import datetime, timedelta
 
-from fastapi import APIRouter, Depends, Request
+from fastapi import APIRouter, Depends
 from khayyam import JalaliDatetime as jd
-from schemas.schemas import CostIn, FactorIn, ResponseOut
-from tools.database import get_database
-from tools.tokens import JWTBearer, get_sub
-from tools.utils import peek, to_gregorian_
+from src.auth.authentication import get_current_user
+from src.auth.authorization import authorize
+from src.schemas.schemas import CostIn, FactorIn, ResponseOut
+from src.tools.database import get_database
+from src.tools.utils import peek, to_gregorian_
 
-plan_router = APIRouter(prefix='/marketer', tags=['Marketer'])
+plan_router = APIRouter(prefix="/marketer", tags=["Marketer"])
 
 
-@plan_router.get("/profile", dependencies=[Depends(JWTBearer())])
-async def get_marketer_profile(request: Request):
-    marketer_id = get_sub(request)
+@plan_router.get("/profile")
+@authorize(["Marketer.All"])
+async def get_marketer_profile(user: dict = Depends(get_current_user)):
     brokerage = get_database()
 
-    result = brokerage.marketers.find_one({"IdpId": marketer_id}, 
-                                          {'_id': 0}
-                                        )
+    result = brokerage.marketers.find_one({"IdpId": user.get("sub")}, {"_id": 0})
 
     if result:
-        return ResponseOut(timeGenerated=datetime.now(),
-                           result=result,
-                           error="")
-    else:    
-        return ResponseOut(timeGenerated=datetime.now(),
-                           result={},
-                           error="")
+        return ResponseOut(timeGenerated=datetime.now(), result=result, error="")
+    else:
+        return ResponseOut(timeGenerated=datetime.now(), result={}, error="")
 
 
-@plan_router.get("/cost", dependencies=[Depends(JWTBearer())])
-async def cal_marketer_cost(request: Request, args: CostIn = Depends(CostIn)):
-    marketer_id = get_sub(request)
+@plan_router.get("/cost")
+@authorize(["Marketer.All"])
+async def cal_marketer_cost(
+    user: dict = Depends(get_current_user), args: CostIn = Depends(CostIn)
+):
     brokerage = get_database()
 
     # check if marketer exists and return his name
-    marketer_dict = brokerage.marketers.find_one({"IdpId": marketer_id}, {"_id": 0})
+    marketer_dict = brokerage.marketers.find_one({"IdpId": user.get("sub")}, {"_id": 0})
 
     query = {"Referer": {"$regex": marketer_dict.get("FirstName")}}
 
     fields = {"PAMCode": 1}
 
     customers_records = brokerage.customers.find(query, fields)
-    trade_codes = [c.get('PAMCode') for c in customers_records]
+    trade_codes = [c.get("PAMCode") for c in customers_records]
 
     # transform dates
     from_gregorian_date = to_gregorian_(args.from_date)
     to_gregorian_date = to_gregorian_(args.to_date)
-    to_gregorian_date = datetime.strptime(to_gregorian_date, "%Y-%m-%d") + timedelta(days=1)
+    to_gregorian_date = datetime.strptime(to_gregorian_date, "%Y-%m-%d") + timedelta(
+        days=1
+    )
     to_gregorian_date = to_gregorian_date.strftime("%Y-%m-%d")
 
     buy_pipeline = [
@@ -57,43 +56,30 @@ async def cal_marketer_cost(request: Request, args: CostIn = Depends(CostIn)):
                     {"TradeCode": {"$in": trade_codes}},
                     {"TradeDate": {"$gte": from_gregorian_date}},
                     {"TradeDate": {"$lte": to_gregorian_date}},
-                    {"TradeType": 1}
-                    ]
-                }
-            },
+                    {"TradeType": 1},
+                ]
+            }
+        },
         {
             "$project": {
                 "Price": 1,
                 "Volume": 1,
-                "Total" : {"$multiply": ["$Price", "$Volume"]},
+                "Total": {"$multiply": ["$Price", "$Volume"]},
                 "TotalCommission": 1,
                 "TradeItemBroker": 1,
                 "Buy": {
-                    "$add": [
-                        "$TotalCommission",
-                        {"$multiply": ["$Price", "$Volume"]}
-                        ]
-                    }
+                    "$add": ["$TotalCommission", {"$multiply": ["$Price", "$Volume"]}]
+                },
             }
         },
         {
             "$group": {
-                "_id": "$id", 
-                "TotalFee": {
-                    "$sum": "$TradeItemBroker"
-                },
-                "TotalBuy": {
-                    "$sum": "$Buy"
-                }
+                "_id": "$id",
+                "TotalFee": {"$sum": "$TradeItemBroker"},
+                "TotalBuy": {"$sum": "$Buy"},
             }
         },
-        {
-            "$project": {
-                "_id": 0,
-                "TotalBuy": 1,
-                "TotalFee": 1
-            }
-        }
+        {"$project": {"_id": 0, "TotalBuy": 1, "TotalFee": 1}},
     ]
 
     sell_pipeline = [
@@ -103,88 +89,69 @@ async def cal_marketer_cost(request: Request, args: CostIn = Depends(CostIn)):
                     {"TradeCode": {"$in": trade_codes}},
                     {"TradeDate": {"$gte": from_gregorian_date}},
                     {"TradeDate": {"$lte": to_gregorian_date}},
-                    {"TradeType": 2}
-                    ]
-                }
-            },
+                    {"TradeType": 2},
+                ]
+            }
+        },
         {
             "$project": {
                 "Price": 1,
                 "Volume": 1,
-                "Total" : {"$multiply": ["$Price", "$Volume"]},
+                "Total": {"$multiply": ["$Price", "$Volume"]},
                 "TotalCommission": 1,
                 "TradeItemBroker": 1,
                 "Sell": {
                     "$subtract": [
                         {"$multiply": ["$Price", "$Volume"]},
-                        "$TotalCommission"
-                        ]
-                    }
+                        "$TotalCommission",
+                    ]
+                },
             }
         },
         {
             "$group": {
-                "_id": "$id", 
-                "TotalFee": {
-                 "$sum": "$TradeItemBroker"
-                },
-                "TotalSell": {
-                    "$sum": "$Sell"
-                }
+                "_id": "$id",
+                "TotalFee": {"$sum": "$TradeItemBroker"},
+                "TotalSell": {"$sum": "$Sell"},
             }
         },
-        {
-            "$project": {
-                "_id": 0,
-                "TotalSell": 1,
-                "TotalFee": 1
-            }
-        }
+        {"$project": {"_id": 0, "TotalSell": 1, "TotalFee": 1}},
     ]
 
     buy_agg_result = peek(brokerage.trades.aggregate(pipeline=buy_pipeline))
     sell_agg_result = peek(brokerage.trades.aggregate(pipeline=sell_pipeline))
 
-    marketer_total = {
-       "TotalPureVolume": 0,
-       "TotalFee": 0
-    }
+    marketer_total = {"TotalPureVolume": 0, "TotalFee": 0}
 
-    buy_dict = {
-        "vol": 0,
-        "fee": 0
-    }
+    buy_dict = {"vol": 0, "fee": 0}
 
-    sell_dict = {
-        "vol": 0,
-        "fee": 0
-    }
+    sell_dict = {"vol": 0, "fee": 0}
 
     if buy_agg_result:
-        buy_dict['vol'] = buy_agg_result.get("TotalBuy")
-        buy_dict['fee'] = buy_agg_result.get("TotalFee")
+        buy_dict["vol"] = buy_agg_result.get("TotalBuy")
+        buy_dict["fee"] = buy_agg_result.get("TotalFee")
 
     if sell_agg_result:
-        sell_dict['vol'] = sell_agg_result.get("TotalSell")
-        sell_dict['fee'] = sell_agg_result.get("TotalFee")
+        sell_dict["vol"] = sell_agg_result.get("TotalSell")
+        sell_dict["fee"] = sell_agg_result.get("TotalFee")
 
     marketer_total["TotalPureVolume"] = buy_dict.get("vol") + sell_dict.get("vol")
     marketer_total["TotalFee"] = buy_dict.get("fee") + sell_dict.get("fee")
 
     # find marketer's plan
     marketer_plans = {
-        "payeh": {"start": 0, "end": 30000000000, "marketer_share": .05},
-        "morvarid": {"start": 30000000000, "end": 50000000000, "marketer_share": .1},
-        "firouzeh": {"start": 50000000000, "end": 100000000000, "marketer_share": .15},
-        "aghigh": {"start": 100000000000, "end": 150000000000, "marketer_share": .2},
-        "yaghout": {"start": 150000000000, "end": 200000000000, "marketer_share": .25},
-        "zomorod": {"start": 200000000000, "end": 300000000000, "marketer_share": .3},
-        "tala": {"start": 300000000000, "end": 400000000000, "marketer_share": .35},
-        "almas": {"start": 400000000000, "marketer_share": .4}
+        "payeh": {"start": 0, "end": 30000000000, "marketer_share": 0.05},
+        "morvarid": {"start": 30000000000, "end": 50000000000, "marketer_share": 0.1},
+        "firouzeh": {"start": 50000000000, "end": 100000000000, "marketer_share": 0.15},
+        "aghigh": {"start": 100000000000, "end": 150000000000, "marketer_share": 0.2},
+        "yaghout": {"start": 150000000000, "end": 200000000000, "marketer_share": 0.25},
+        "zomorod": {"start": 200000000000, "end": 300000000000, "marketer_share": 0.3},
+        "tala": {"start": 300000000000, "end": 400000000000, "marketer_share": 0.35},
+        "almas": {"start": 400000000000, "marketer_share": 0.4},
     }
 
     # pure_fee = marketer_total.get("TotalFee") * .65
-    pure_fee = marketer_total.get("TotalFee") * .65
+    pure_fee = marketer_total.get("TotalFee") * 0.65
     marketer_fee = 0
     tpv = marketer_total.get("TotalPureVolume")
 
@@ -248,7 +215,6 @@ async def cal_marketer_cost(request: Request, args: CostIn = Depends(CostIn)):
         final_fee -= final_fee * 0.15
     two_months_ago_coll = 0
 
-
     result = {
         "TotalFee": marketer_total.get("TotalFee"),
         "PureFee": pure_fee,
@@ -259,51 +225,49 @@ async def cal_marketer_cost(request: Request, args: CostIn = Depends(CostIn)):
         "Collateral": collateral,
         "FinalFee": final_fee,
         "CollateralOfTwoMonthAgo": two_months_ago_coll,
-        "Payment": final_fee + float(two_months_ago_coll)
-        }
-    
-    return ResponseOut(timeGenerated=datetime.now(),
-                       result=result,
-                       error=""
-                    )
+        "Payment": final_fee + float(two_months_ago_coll),
+    }
+
+    return ResponseOut(timeGenerated=datetime.now(), result=result, error="")
 
 
-@plan_router.get("/factor-print/", dependencies=[Depends(JWTBearer())])
-async def factor_print(request: Request, args: FactorIn = Depends(FactorIn)):
-    marketer_id = get_sub(request)
+@plan_router.get("/factor-print/")
+@authorize(["Marketer.All"])
+async def factor_print(
+    user: dict = Depends(get_current_user), args: FactorIn = Depends(FactorIn)
+):
 
     brokerage = get_database()
     marketers_coll = brokerage["marketers"]
     factors_coll = brokerage["factors"]
-    marketer = factors_coll.find_one({"IdpID": marketer_id})
-    dd=args.year+ f"{int(args.month):02}"
-    cc=args.year+ f"{int(args.month)-2:02}"
-    if args.month =="1" or args.month =="01":
-        cc=str(int(args.year)-1)+ "11"
-    two_months_ago_coll = marketer[cc+"Collateral"]
+    marketer = factors_coll.find_one({"IdpID": user.get("sub")})
+    dd = args.year + f"{int(args.month):02}"
+    cc = args.year + f"{int(args.month)-2:02}"
+    if args.month == "1" or args.month == "01":
+        cc = str(int(args.year) - 1) + "11"
+    two_months_ago_coll = marketer[cc + "Collateral"]
     from_date = f"{args.year}-{args.month}-01"
     from_gregorian_date = to_gregorian_(from_date)
     to_date = jd.strptime(from_date, "%Y-%m-%d")
     dorehh = f"{args.year} {to_date.monthname()}"
     to_date = to_date.replace(day=to_date.daysinmonth).strftime("%Y-%m-%d")
     to_gregorian_date = to_gregorian_(to_date)
-    to_gregorian_date = datetime.strptime(to_gregorian_date, "%Y-%m-%d") + timedelta(days=1)
+    to_gregorian_date = datetime.strptime(to_gregorian_date, "%Y-%m-%d") + timedelta(
+        days=1
+    )
     to_gregorian_date = to_gregorian_date.strftime("%Y-%m-%d")
 
     result = {
-        "TotalFee": marketer[dd+"TF"],
-        "TotalPureVolume": marketer[dd+"TPV"],
-        "PureFee": marketer[dd+"PureFee"],
-        "MarketerFee": marketer[dd+"MarFee"],
-        "Plan": marketer[dd+"Plan"],
-        "Tax": marketer[dd+"Tax"],
-        "Collateral": marketer[dd+"Collateral"],
-        "FinalFee": marketer[dd+"FinalFee"],
+        "TotalFee": marketer[dd + "TF"],
+        "TotalPureVolume": marketer[dd + "TPV"],
+        "PureFee": marketer[dd + "PureFee"],
+        "MarketerFee": marketer[dd + "MarFee"],
+        "Plan": marketer[dd + "Plan"],
+        "Tax": marketer[dd + "Tax"],
+        "Collateral": marketer[dd + "Collateral"],
+        "FinalFee": marketer[dd + "FinalFee"],
         "CollateralOfTwoMonthAgo": two_months_ago_coll,
-        "Payment": marketer[dd+"Payment"]
-        }
-    
-    return ResponseOut(timeGenerated=datetime.now(),
-                       result=result,
-                       error=""
-                    )
+        "Payment": marketer[dd + "Payment"],
+    }
+
+    return ResponseOut(timeGenerated=datetime.now(), result=result, error="")

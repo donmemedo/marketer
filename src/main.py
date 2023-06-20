@@ -4,12 +4,13 @@ import uvicorn
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
+from auth.permissions import permissions
+from auth.registration import get_token, set_permissions
 from routers.plan import plan_router
 from routers.user import user_router
 from routers.volume_and_fee import volume_and_fee_router
 from tools.config import setting
 from tools.logger import log_config
-
 
 app = FastAPI(
     version=setting.VERSION,
@@ -29,7 +30,13 @@ app.add_middleware(
 )
 
 
-@app.get("/health-check", tags=["Deafult"])
+@app.on_event("startup")
+async def startup():
+    token = await get_token()
+    await set_permissions(permissions, token)
+
+
+@app.get("/health-check", tags=["Default"])
 def health_check():
     return {"status": "OK"}
 
