@@ -1,96 +1,76 @@
-from datetime import datetime
+"""_summary_
 
-from fastapi import APIRouter, Depends
-from pymongo import ASCENDING
-from src.auth.authentication import get_current_user
-from src.auth.authorization import authorize
-from src.schemas.schemas import ResponseListOut, UserSearchIn
-from src.tools.database import get_database
-from src.tools.utils import get_marketer_name, peek
+Returns:
+    _type_: _description_
+"""
+from fastapi import APIRouter, Depends, Request
+from fastapi_pagination import Page, add_pagination
+from fastapi_pagination.ext.pymongo import paginate
+from tools import peek
+from schemas import UserIn, UserOut
+from database import get_database
+from tokens import JWTBearer, get_sub
 
-user_router = APIRouter(prefix="/user", tags=["User"])
+user_router = APIRouter(prefix='/user', tags=['User'])
 
 
-@user_router.get("/search", response_model=None)
-@authorize(["Marketer.All"])
-async def get_user_profile(
-    user: dict = Depends(get_current_user), args: UserSearchIn = Depends(UserSearchIn)
-):
+@user_router.get("/list/", dependencies=[Depends(JWTBearer())], response_model=Page[UserOut])
+async def search_marketer_user(request: Request):
+    """List Marketer Users
+
+    Args:
+        request (Request): _description_
+
+    Returns:
+        _type_: _description_
+    """
+    # get user id
+    marketer_id = get_sub(request)
+    brokerage = get_database()
+    customer_coll = brokerage["customers"]
+    marketers_coll = brokerage["marketers"]
+
+    # check if marketer exists and return his name
+    query_result = marketers_coll.find({"IdpId": marketer_id})
+    marketer_dict = peek(query_result)
+    marketer_fullname = marketer_dict.get("FirstName") + " " + marketer_dict.get("LastName")
+
+    return paginate(customer_coll, {"Referer": marketer_fullname}, sort=[("RegisterDate", -1)])
+
+
+@user_router.get("/profile/", dependencies=[Depends(JWTBearer())], response_model=Page[UserOut])
+async def get_user_profile(request: Request, args: UserIn = Depends(UserIn)):
+    """Searches the Users of Marketer by thier First and Last Name
+
+    Args:
+        request (Request): _description_
+        args (UserIn, optional): _description_. Defaults to Depends(UserIn).
+
+    Returns:
+        _type_: _description_
+    """
+    # get user id
+    marketer_id = get_sub(request)
     brokerage = get_database()
 
-    # check whether marketer exists or not and return his name
-    query_result = brokerage.marketers.find({"IdpId": user.get("sub")})
+    customer_coll = brokerage["customers"]
+    marketers_coll = brokerage["marketers"]
+
+    # check if marketer exists and return his name
+    query_result = marketers_coll.find({"IdpId": marketer_id})
 
     marketer_dict = peek(query_result)
 
-    marketer_fullname = get_marketer_name(marketer_dict)
+    marketer_fullname = marketer_dict.get("FirstName") + " " + marketer_dict.get("LastName")
 
-    pipeline = [
-        {"$match": {"$and": [{"Referer": marketer_fullname}]}},
-        {
-            "$project": {
-                "Name": {"$concat": ["$FirstName", " ", "$LastName"]},
-                "RegisterDate": 1,
-                "Mobile": 1,
-                "BankAccountNumber": 1,
-                "Username": 1,
-                "TradeCode": "$PAMCode",
-                "FirstName": 1,
-                "LastName": 1,
-                "_id": 0,
-                "FirmTitle": 1,
-                "Telephone": 1,
-                "FirmRegisterDate": 1,
-                "Email": 1,
-                "ActivityField": 1,
-            }
-        },
-        {
-            "$match": {
-                "$or": [
-                    {"Name": {"$regex": args.name}},
-                    {"FirmTitle": {"$regex": args.name}},
-                ]
-            }
-        },
-        {"$sort": {"RegisterDate": ASCENDING}},
-        {
-            "$facet": {
-                "metadata": [{"$count": "total"}],
-                "items": [
-                    {"$skip": (args.page_index - 1) * args.page_size},
-                    {"$limit": args.page_size},
-                ],
-            }
-        },
-        {"$unwind": "$metadata"},
-        {
-            "$project": {
-                "total": "$metadata.total",
-                "items": 1,
-            }
-        },
-    ]
+    query = {"$and": [
+        {"Referer": marketer_fullname},
+        {"FirstName": {"$regex": args.first_name}},
+        {"LastName": {"$regex": args.last_name}}
+        ]
+    }
 
-    results = brokerage.customers.aggregate(pipeline=pipeline)
+    return paginate(customer_coll, query, sort=[("RegisterDate", -1)])
 
-    result_dict = next(results, None)
 
-    if result_dict:
-        result = {
-            "pagedData": result_dict.get("items", []),
-            "errorCode": None,
-            "errorMessage": None,
-            "totalCount": result_dict.get("total", 0),
-        }
-
-        return ResponseListOut(timeGenerated=datetime.now(), result=result, error="")
-    else:
-        result = {
-            "pagedData": [],
-            "errorCode": None,
-            "errorMessage": None,
-            "totalCount": 0,
-        }
-
-        return ResponseListOut(timeGenerated=datetime.now(), result=result, error="")
+add_pagination(user_router)
