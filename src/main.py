@@ -19,11 +19,10 @@ app = FastAPI(
     redoc_url=setting.FASTAPI_REDOC,
 )
 
-origins = [setting.ORIGINS]
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=origins,
+    allow_origins=setting.ORIGINS.split(","),
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
