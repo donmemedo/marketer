@@ -48,6 +48,7 @@ async def get_user_total_trades(
                 "Volume": 1,
                 "Total": {"$multiply": ["$Price", "$Volume"]},
                 "TotalCommission": 1,
+                "PriorityAcceptance": 1,
                 "TradeItemBroker": 1,
                 "TradeCode": 1,
                 "Commission": {
@@ -74,13 +75,14 @@ async def get_user_total_trades(
                 "_id": "$TradeCode",
                 "TotalFee": {"$sum": "$TradeItemBroker"},
                 "TotalPureVolume": {"$sum": "$Commission"},
+                "TotalPriorityAcceptance": {"$sum": "$PriorityAcceptance"}
             }
         },
         {
             "$project": {
                 "_id": 0,
                 "TradeCode": "$_id",
-                "TotalPureVolume": 1,
+                "TotalPureVolume": {"$add": ["$TotalPriorityAcceptance", "$TotalPureVolume"]},
                 "TotalFee": 1,
             }
         },
@@ -170,6 +172,7 @@ async def get_marketer_total_trades(
                 "Price": 1,
                 "Volume": 1,
                 "Total": {"$multiply": ["$Price", "$Volume"]},
+                "PriorityAcceptance": 1,
                 "TotalCommission": 1,
                 "TradeItemBroker": 1,
                 "TradeCode": 1,
@@ -197,13 +200,14 @@ async def get_marketer_total_trades(
                 "_id": "$id",
                 "TotalFee": {"$sum": "$TradeItemBroker"},
                 "TotalPureVolume": {"$sum": "$Commission"},
+                "TotalPriorityAcceptance": {"$sum": "$PriorityAcceptance"}
             }
         },
         {
             "$project": {
                 "_id": 0,
                 "TradeCode": "$_id",
-                "TotalPureVolume": 1,
+                "TotalPureVolume": {"$add": ["$TotalPriorityAcceptance", "$TotalPureVolume"]},
                 "TotalFee": 1,
             }
         },
@@ -258,6 +262,7 @@ async def users_list_by_volume(
                     "Price": 1,
                     "Volume": 1,
                     "Total": {"$multiply": ["$Price", "$Volume"]},
+                    "PriorityAcceptance": 1,
                     "TotalCommission": 1,
                     "TradeItemBroker": 1,
                     "TradeCode": 1,
@@ -285,13 +290,14 @@ async def users_list_by_volume(
                     "_id": "$TradeCode",
                     "TotalFee": {"$sum": "$TradeItemBroker"},
                     "TotalPureVolume": {"$sum": "$Commission"},
+                    "TotalPriorityAcceptance": {"$sum": "$PriorityAcceptance"}
                 }
             },
             {
                 "$project": {
                     "_id": 0,
                     "TradeCode": "$_id",
-                    "TotalPureVolume": 1,
+                    "TotalPureVolume": {"$add": ["$TotalPriorityAcceptance", "$TotalPureVolume"]},
                     "TotalFee": 1,
                 }
             },
