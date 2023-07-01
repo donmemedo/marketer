@@ -17,6 +17,15 @@ data:
   ISSUER: "https://idp.tavanabroker.ir"
   SPLUNK_HOST: "log.tech1a.co"
   SPLUNK_PORT: "6141"
+  FASTAPI_DOCS: ""
+  FASTAPI_REDOC: ""
+  TOKEN_URL: "https://idp.tavanabroker.ir/connect/token"
+  CLIENT_ID: "M2M.RegisterServicePermission"
+  CLIENT_SECRET: "IDPRegisterServicePermission"
+  GRANT_TYPE: "client_credentials"
+  OPENID_CONFIGURATION_URL: "https://cluster.tech1a.co/.well-known/openid-configuration"
+  REGISTRATION_URL: "https://cluster.tech1a.co/api/service-permossion/register-service-permission"
+
 ---
 apiVersion: apps/v1
 kind: Deployment
