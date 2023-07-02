@@ -23,8 +23,8 @@ data:
   CLIENT_ID: "M2M.RegisterServicePermission"
   CLIENT_SECRET: "IDPRegisterServicePermission"
   GRANT_TYPE: "client_credentials"
-  OPENID_CONFIGURATION_URL: "https://cluster.tech1a.co/.well-known/openid-configuration"
-  REGISTRATION_URL: "https://cluster.tech1a.co/api/service-permossion/register-service-permission"
+  OPENID_CONFIGURATION_URL: "https://idp.tavanabroker.ir/.well-known/openid-configuration"
+  REGISTRATION_URL: "https://idp.tavanabroker.ir/api/service-permossion/register-service-permission"
 
 ---
 apiVersion: apps/v1
