@@ -11,7 +11,7 @@ bearer_scheme = HTTPBearer()
 
 async def fetch_public_key() -> str:
     try:
-        async with aiohttp.ClientSession(trust_env=True) as session:
+        async with aiohttp.ClientSession(connector=aiohttp.TCPConnector(verify_ssl=False)) as session:
             async with session.get(setting.OPENID_CONFIGURATION_URL) as response:
                 response.raise_for_status()
                 config = await response.json()
