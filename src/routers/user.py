@@ -1,12 +1,13 @@
 from datetime import datetime
 
-from fastapi import APIRouter, Depends
-from pymongo import ASCENDING
+from fastapi import APIRouter, Depends, HTTPException
+from pymongo import ASCENDING, MongoClient
+
 from src.auth.authentication import get_current_user
 from src.auth.authorization import authorize
 from src.schemas.schemas import ResponseListOut, UserSearchIn
 from src.tools.database import get_database
-from src.tools.utils import get_marketer_name, peek
+from src.tools.utils import get_marketer_name
 
 user_router = APIRouter(prefix="/user", tags=["User"])
 
@@ -14,16 +15,17 @@ user_router = APIRouter(prefix="/user", tags=["User"])
 @user_router.get("/search", response_model=None)
 @authorize(["Marketer.All"])
 async def get_user_profile(
-    user: dict = Depends(get_current_user), args: UserSearchIn = Depends(UserSearchIn)
+        user: dict = Depends(get_current_user),
+        args: UserSearchIn = Depends(UserSearchIn),
+        brokerage: MongoClient = Depends(get_database),
 ):
-    brokerage = get_database()
-
     # check whether marketer exists or not and return his name
-    query_result = brokerage.marketers.find({"IdpId": user.get("sub")})
+    query_result = brokerage.marketers.find_one({"IdpId": user.get("sub")})
 
-    marketer_dict = peek(query_result)
+    if query_result is None:
+        return HTTPException(status_code=401, detail="Unauthorized User")
 
-    marketer_fullname = get_marketer_name(marketer_dict)
+    marketer_fullname = get_marketer_name(query_result)
 
     pipeline = [
         {"$match": {"$and": [{"Referer": marketer_fullname}]}},
