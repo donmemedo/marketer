@@ -1,6 +1,6 @@
 from datetime import datetime, timedelta
 
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, status
 from khayyam import JalaliDatetime
 from pymongo import MongoClient
 
@@ -9,7 +9,7 @@ from src.auth.authorization import authorize
 from src.schemas.schemas import (MarketerTotalIn, ResponseListOut, ResponseOut,
                                  UsersListIn, UserTotalIn)
 from src.tools.database import get_database
-from src.tools.utils import get_marketer_name, peek, to_gregorian_
+from src.tools.utils import get_marketer_name, to_gregorian_
 
 volume_and_fee_router = APIRouter(prefix="/volume-and-fee", tags=["Volume and Fee"])
 
@@ -25,7 +25,7 @@ async def get_user_total_trades(
     query_result = brokerage.marketers.find_one({"IdpId": user.get("sub")})
 
     if query_result is None:
-        return HTTPException(status_code=401, detail="Unauthorized User")
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Unauthorized User")
 
     # transform date from Jalali to Gregorian
     from_gregorian_date = to_gregorian_(args.from_date)
@@ -147,7 +147,7 @@ async def get_marketer_total_trades(
     query_result = brokerage.marketers.find_one({"IdpId": user.get("sub")})
 
     if query_result is None:
-        return HTTPException(status_code=401, detail="Unauthorized User")
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Unauthorized User")
 
     marketer_fullname = get_marketer_name(query_result)
 
@@ -241,7 +241,7 @@ async def users_list_by_volume(
     query_result = brokerage.marketers.find_one({"IdpId": user.get("sub")})
 
     if not query_result:
-        return HTTPException(status_code=401, detail="Unauthorized User")
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Unauthorized User")
 
     marketer_fullname = get_marketer_name(query_result)
 

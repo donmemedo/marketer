@@ -1,6 +1,6 @@
 from datetime import datetime, timedelta
 
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, status
 from khayyam import JalaliDatetime as jd
 from pymongo import MongoClient
 
@@ -22,7 +22,7 @@ async def get_marketer_profile(
     result = brokerage.marketers.find_one({"IdpId": user.get("sub")}, {"_id": 0})
 
     if result is None:
-        return HTTPException(status_code=401, detail="Unauthorized user")
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Unauthorized user")
 
     if result:
         return ResponseOut(timeGenerated=datetime.now(), result=result, error="")
@@ -41,7 +41,7 @@ async def cal_marketer_cost(
     marketer_dict = brokerage.marketers.find_one({"IdpId": user.get("sub")}, {"_id": 0})
 
     if marketer_dict is None:
-        return HTTPException(status_code=401, detail="Unauthorized user")
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Unauthorized user")
 
     query = {"Referer": {"$regex": marketer_dict.get("FirstName")}}
 
