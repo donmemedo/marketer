@@ -74,7 +74,7 @@ metadata:
 spec:
   ingressClassName: nginx
   rules:
-    - host: marketer-api.tavanabroker.ir
+    - host: marketer-api.tavanaco.ir
       http:
         paths:
         - path: /
