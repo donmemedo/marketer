@@ -253,6 +253,8 @@ async def factor_print(
     cc = args.year + f"{int(args.month) - 2:02}"
     if args.month == "1" or args.month == "01":
         cc = str(int(args.year) - 1) + "11"
+    if args.month == "2" or args.month == "02":
+        cc = str(int(args.year) - 1) + "12"
     two_months_ago_coll = marketer[cc + "Collateral"]
     from_date = f"{args.year}-{args.month}-01"
     from_gregorian_date = to_gregorian_(from_date)
@@ -270,10 +272,10 @@ async def factor_print(
         "TotalPureVolume": marketer[dd + "TPV"],
         "PureFee": marketer[dd + "PureFee"],
         "MarketerFee": marketer[dd + "MarFee"],
-        "Plan": marketer[dd + "Plan"],
+        # "Plan": marketer[dd + "Plan"],
         "Tax": marketer[dd + "Tax"],
         "Collateral": marketer[dd + "Collateral"],
-        "FinalFee": marketer[dd + "FinalFee"],
+        # "FinalFee": marketer[dd + "FinalFee"],
         "CollateralOfTwoMonthAgo": two_months_ago_coll,
         "Payment": marketer[dd + "Payment"],
     }
