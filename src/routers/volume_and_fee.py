@@ -1,18 +1,15 @@
 from datetime import datetime, timedelta
 
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, HTTPException, status
 from khayyam import JalaliDatetime
+from pymongo import MongoClient
+
 from src.auth.authentication import get_current_user
 from src.auth.authorization import authorize
-from src.schemas.schemas import (
-    MarketerTotalIn,
-    ResponseListOut,
-    ResponseOut,
-    UsersListIn,
-    UserTotalIn,
-)
+from src.schemas.schemas import (MarketerTotalIn, ResponseListOut, ResponseOut,
+                                 UsersListIn, UserTotalIn)
 from src.tools.database import get_database
-from src.tools.utils import get_marketer_name, peek, to_gregorian_
+from src.tools.utils import get_marketer_name, to_gregorian_
 
 volume_and_fee_router = APIRouter(prefix="/volume-and-fee", tags=["Volume and Fee"])
 
@@ -20,9 +17,15 @@ volume_and_fee_router = APIRouter(prefix="/volume-and-fee", tags=["Volume and Fe
 @volume_and_fee_router.get("/user-total", response_model=None)
 @authorize(["Marketer.All"])
 async def get_user_total_trades(
-    user: dict = Depends(get_current_user), args: UserTotalIn = Depends(UserTotalIn)
+        user: dict = Depends(get_current_user),
+        args: UserTotalIn = Depends(UserTotalIn),
+        brokerage: MongoClient = Depends(get_database),
 ):
-    brokerage = get_database()
+    # check if marketer exists and return his name
+    query_result = brokerage.marketers.find_one({"IdpId": user.get("sub")})
+
+    if query_result is None:
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Unauthorized User")
 
     # transform date from Jalali to Gregorian
     from_gregorian_date = to_gregorian_(args.from_date)
@@ -75,14 +78,16 @@ async def get_user_total_trades(
                 "_id": "$TradeCode",
                 "TotalFee": {"$sum": "$TradeItemBroker"},
                 "TotalPureVolume": {"$sum": "$Commission"},
-                "TotalPriorityAcceptance": {"$sum": "$PriorityAcceptance"}
+                "TotalPriorityAcceptance": {"$sum": "$PriorityAcceptance"},
             }
         },
         {
             "$project": {
                 "_id": 0,
                 "TradeCode": "$_id",
-                "TotalPureVolume": {"$add": ["$TotalPriorityAcceptance", "$TotalPureVolume"]},
+                "TotalPureVolume": {
+                    "$add": ["$TotalPriorityAcceptance", "$TotalPureVolume"]
+                },
                 "TotalFee": 1,
             }
         },
@@ -134,13 +139,15 @@ async def get_user_total_trades(
 @volume_and_fee_router.get("/marketer-total", response_model=None)
 @authorize(["Marketer.All"])
 async def get_marketer_total_trades(
-    user: dict = Depends(get_current_user),
-    args: MarketerTotalIn = Depends(MarketerTotalIn),
+        user: dict = Depends(get_current_user),
+        args: MarketerTotalIn = Depends(MarketerTotalIn),
+        brokerage: MongoClient = Depends(get_database),
 ):
-    brokerage = get_database()
-
     # check if marketer exists and return his name
     query_result = brokerage.marketers.find_one({"IdpId": user.get("sub")})
+
+    if query_result is None:
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Unauthorized User")
 
     marketer_fullname = get_marketer_name(query_result)
 
@@ -200,14 +207,16 @@ async def get_marketer_total_trades(
                 "_id": "$id",
                 "TotalFee": {"$sum": "$TradeItemBroker"},
                 "TotalPureVolume": {"$sum": "$Commission"},
-                "TotalPriorityAcceptance": {"$sum": "$PriorityAcceptance"}
+                "TotalPriorityAcceptance": {"$sum": "$PriorityAcceptance"},
             }
         },
         {
             "$project": {
                 "_id": 0,
                 "TradeCode": "$_id",
-                "TotalPureVolume": {"$add": ["$TotalPriorityAcceptance", "$TotalPureVolume"]},
+                "TotalPureVolume": {
+                    "$add": ["$TotalPriorityAcceptance", "$TotalPureVolume"]
+                },
                 "TotalFee": 1,
             }
         },
@@ -224,16 +233,17 @@ async def get_marketer_total_trades(
 @volume_and_fee_router.get("/users-total", response_model=None)
 @authorize(["Marketer.All"])
 async def users_list_by_volume(
-    user: dict = Depends(get_current_user), args: UsersListIn = Depends(UsersListIn)
+        user: dict = Depends(get_current_user),
+        args: UsersListIn = Depends(UsersListIn),
+        brokerage: MongoClient = Depends(get_database),
 ):
-    brokerage = get_database()
-
     # check if marketer exists and return his name
-    query_result = brokerage.marketers.find({"IdpId": user.get("sub")})
+    query_result = brokerage.marketers.find_one({"IdpId": user.get("sub")})
 
-    marketer_dict = peek(query_result)
+    if not query_result:
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Unauthorized User")
 
-    marketer_fullname = get_marketer_name(marketer_dict)
+    marketer_fullname = get_marketer_name(query_result)
 
     from_gregorian_date = to_gregorian_(args.from_date)
     to_gregorian_date = to_gregorian_(args.to_date)
@@ -290,14 +300,16 @@ async def users_list_by_volume(
                     "_id": "$TradeCode",
                     "TotalFee": {"$sum": "$TradeItemBroker"},
                     "TotalPureVolume": {"$sum": "$Commission"},
-                    "TotalPriorityAcceptance": {"$sum": "$PriorityAcceptance"}
+                    "TotalPriorityAcceptance": {"$sum": "$PriorityAcceptance"},
                 }
             },
             {
                 "$project": {
                     "_id": 0,
                     "TradeCode": "$_id",
-                    "TotalPureVolume": {"$add": ["$TotalPriorityAcceptance", "$TotalPureVolume"]},
+                    "TotalPureVolume": {
+                        "$add": ["$TotalPriorityAcceptance", "$TotalPureVolume"]
+                    },
                     "TotalFee": 1,
                 }
             },
