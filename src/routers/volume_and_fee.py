@@ -359,10 +359,7 @@ async def users_list_by_volume(
             },
         ]
 
-        active_dict = next(brokerage.trades.aggregate(pipeline=pipeline), None)
-
-        if active_dict is None:
-            return {}
+        active_dict = next(brokerage.trades.aggregate(pipeline=pipeline), {})
 
         result = {
             "pagedData": active_dict.get("items", []),
@@ -433,7 +430,7 @@ async def users_list_by_volume(
         ]
 
         inactive_dict = next(
-            brokerage.customers.aggregate(pipeline=inactive_users_pipline), None
+            brokerage.customers.aggregate(pipeline=inactive_users_pipline), {}
         )
 
         result = {
