@@ -12,7 +12,7 @@ def authorize(permissions):
         async def wrapper(*args, **kwargs):
             if not any(
                     [
-                        p in kwargs.get("user").get(Service.Marketer.name, [])
+                        p in kwargs.get("user").get("permission", [])
                         for p in permissions
                     ]
             ):
