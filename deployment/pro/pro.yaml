@@ -73,6 +73,10 @@ metadata:
   name: marketer-api
 spec:
   ingressClassName: nginx
+  tls:
+  - hosts:
+    - marketer-api.tavanaco.ir
+    secretName: tavanaco-ir
   rules:
     - host: marketer-api.tavanaco.ir
       http:
