@@ -105,5 +105,5 @@ class FactorIn:
     tax: int = Query(0)
     salary: int = Query(0)
     collateral: int = Query(0)
-    month: str = Query(current_date)
-    year: str = Query(current_date)
+    month: str = Query(JalaliDatetime.today().month)
+    year: str = Query(JalaliDatetime.today().year)
