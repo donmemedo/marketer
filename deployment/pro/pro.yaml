@@ -14,17 +14,17 @@ data:
   DOCS_URL: ""
   OPENAPI_URL: ""
   ROOT_PATH: ""
-  ISSUER: "https://idp.tavanabroker.ir"
+  ISSUER: "https://idp.tavanaco.ir"
   SPLUNK_HOST: "log.tech1a.co"
   SPLUNK_PORT: "6141"
   FASTAPI_DOCS: ""
   FASTAPI_REDOC: ""
-  TOKEN_URL: "https://idp.tavanabroker.ir/connect/token"
+  TOKEN_URL: "https://idp.tavanaco.ir/connect/token"
   CLIENT_ID: "M2M.RegisterServicePermission"
   CLIENT_SECRET: "IDPRegisterServicePermission"
   GRANT_TYPE: "client_credentials"
-  OPENID_CONFIGURATION_URL: "https://idp.tavanabroker.ir/.well-known/openid-configuration"
-  REGISTRATION_URL: "https://idp.tavanabroker.ir/api/service-permossion/register-service-permission"
+  OPENID_CONFIGURATION_URL: "https://idp.tavanaco.ir/.well-known/openid-configuration"
+  REGISTRATION_URL: "https://idp.tavanaco.ir/api/service-permossion/register-service-permission"
 
 ---
 apiVersion: apps/v1
