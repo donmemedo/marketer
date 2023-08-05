@@ -2,7 +2,6 @@ from functools import wraps
 
 from fastapi import HTTPException
 
-from src.auth.permission_enum import Service
 from src.tools.logger import logger
 
 

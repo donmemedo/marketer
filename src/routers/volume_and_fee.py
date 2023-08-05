@@ -1,7 +1,6 @@
 from datetime import datetime, timedelta
 
 from fastapi import APIRouter, Depends, HTTPException, status
-from fastapi.responses import JSONResponse
 from khayyam import JalaliDatetime
 from pymongo import MongoClient
 
@@ -38,7 +37,7 @@ async def get_user_total_trades(
     to_gregorian_date = to_gregorian_date.strftime("%Y-%m-%d")
 
     pipeline = [
-        filter_users_stage(args.trade_code, from_gregorian_date, to_gregorian_date),
+        filter_users_stage([args.trade_code], from_gregorian_date, to_gregorian_date),
         project_commission_stage(),
         group_by_total_stage("$TradeCode"),
         project_pure_stage(),
