@@ -1,6 +1,8 @@
 from datetime import datetime, timedelta
 
+import fastapi.responses
 from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi.responses import JSONResponse
 from khayyam import JalaliDatetime
 from pymongo import MongoClient
 
@@ -103,6 +105,30 @@ async def users_list_by_volume(
         brokerage: MongoClient = Depends(get_database),
 ):
     # check if marketer exists and return his name
+    try:
+        JalaliDatetime.strptime(args.to_date, "%Y-%m-%d").todatetime()
+    except:
+        resp = {
+            "result": [],
+            "timeGenerated": JalaliDatetime.now().strftime("%Y-%m-%dT%H:%M:%S.%f"),
+            "error": {
+                "message": "تاریخ انتها را درست وارد کنید.",
+                "code": "30010",
+            },
+        }
+        return JSONResponse(status_code=412, content=resp)
+    try:
+        JalaliDatetime.strptime(args.from_date, "%Y-%m-%d").todatetime()
+    except:
+        resp = {
+            "result": [],
+            "timeGenerated": JalaliDatetime.now().strftime("%Y-%m-%dT%H:%M:%S.%f"),
+            "error": {
+                "message": "تاریخ ابتدا را درست وارد کنید.",
+                "code": "30010",
+            },
+        }
+        return JSONResponse(status_code=412, content=resp)
     query_result = brokerage.marketers.find_one({"IdpId": user.get("sub")})
 
     if not query_result:
