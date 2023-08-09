@@ -15,7 +15,7 @@ async def get_token():
     }
 
     try:
-        async with aiohttp.ClientSession() as session:
+        async with aiohttp.ClientSession(connector=aiohttp.TCPConnector(verify_ssl=False)) as session:
             async with session.post(
                 url=setting.TOKEN_URL, headers=headers, data=payload
             ) as response:
@@ -37,7 +37,7 @@ async def set_permissions(permissions, token):
     payload = json.dumps({"registerServicePermissionItems": permissions})
 
     try:
-        async with aiohttp.ClientSession() as session:
+        async with aiohttp.ClientSession(connector=aiohttp.TCPConnector(verify_ssl=False)) as session:
             async with session.post(
                 url=setting.REGISTRATION_URL, headers=headers, data=payload
             ) as response:

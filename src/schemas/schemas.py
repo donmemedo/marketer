@@ -1,7 +1,7 @@
 from dataclasses import dataclass
 from enum import Enum, IntEnum
 from typing import Any, Dict, List
-
+from datetime import date
 from fastapi import Query
 from khayyam import JalaliDatetime
 
@@ -95,8 +95,8 @@ class UsersListIn(Pages):
     sort_by: SortField = Query(SortField.REGISTRATION_DATE, alias="SortBy")
     sort_order: SortOrder = Query(SortOrder.ASCENDING, alias="SortOrder")
     user_type: UserTypeEnum = Query(UserTypeEnum.active, alias="UserType")
-    from_date: str = Query(current_date, alias="StartDate")
-    to_date: str = Query(current_date, alias="EndDate")
+    from_date: str = Query(date.today().isoformat(), alias="StartDate")
+    to_date: str = Query(date.today().isoformat(), alias="EndDate")
 
 
 @dataclass
@@ -105,5 +105,5 @@ class FactorIn:
     tax: int = Query(0)
     salary: int = Query(0)
     collateral: int = Query(0)
-    month: str = Query(current_date)
-    year: str = Query(current_date)
+    month: str = Query(JalaliDatetime.today().month)
+    year: str = Query(JalaliDatetime.today().year)

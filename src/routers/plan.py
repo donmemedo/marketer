@@ -1,7 +1,9 @@
 from datetime import datetime, timedelta
 
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, HTTPException, status
 from khayyam import JalaliDatetime as jd
+from pymongo import MongoClient
+
 from src.auth.authentication import get_current_user
 from src.auth.authorization import authorize
 from src.schemas.schemas import CostIn, FactorIn, ResponseOut
@@ -13,10 +15,14 @@ plan_router = APIRouter(prefix="/marketer", tags=["Marketer"])
 
 @plan_router.get("/profile")
 @authorize(["Marketer.All"])
-async def get_marketer_profile(user: dict = Depends(get_current_user)):
-    brokerage = get_database()
-
+async def get_marketer_profile(
+        user: dict = Depends(get_current_user),
+        brokerage: MongoClient = Depends(get_database),
+):
     result = brokerage.marketers.find_one({"IdpId": user.get("sub")}, {"_id": 0})
+
+    if result is None:
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Unauthorized user")
 
     if result:
         return ResponseOut(timeGenerated=datetime.now(), result=result, error="")
@@ -27,12 +33,15 @@ async def get_marketer_profile(user: dict = Depends(get_current_user)):
 @plan_router.get("/cost")
 @authorize(["Marketer.All"])
 async def cal_marketer_cost(
-    user: dict = Depends(get_current_user), args: CostIn = Depends(CostIn)
+        user: dict = Depends(get_current_user),
+        args: CostIn = Depends(CostIn),
+        brokerage: MongoClient = Depends(get_database)
 ):
-    brokerage = get_database()
-
     # check if marketer exists and return his name
     marketer_dict = brokerage.marketers.find_one({"IdpId": user.get("sub")}, {"_id": 0})
+
+    if marketer_dict is None:
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Unauthorized user")
 
     query = {"Referer": {"$regex": marketer_dict.get("FirstName")}}
 
@@ -234,17 +243,18 @@ async def cal_marketer_cost(
 @plan_router.get("/factor-print/")
 @authorize(["Marketer.All"])
 async def factor_print(
-    user: dict = Depends(get_current_user), args: FactorIn = Depends(FactorIn)
+        user: dict = Depends(get_current_user),
+        args: FactorIn = Depends(FactorIn),
+        brokerage: MongoClient = Depends(get_database),
 ):
-
-    brokerage = get_database()
-    marketers_coll = brokerage["marketers"]
     factors_coll = brokerage["factors"]
     marketer = factors_coll.find_one({"IdpID": user.get("sub")})
     dd = args.year + f"{int(args.month):02}"
-    cc = args.year + f"{int(args.month)-2:02}"
+    cc = args.year + f"{int(args.month) - 2:02}"
     if args.month == "1" or args.month == "01":
         cc = str(int(args.year) - 1) + "11"
+    if args.month == "2" or args.month == "02":
+        cc = str(int(args.year) - 1) + "12"
     two_months_ago_coll = marketer[cc + "Collateral"]
     from_date = f"{args.year}-{args.month}-01"
     from_gregorian_date = to_gregorian_(from_date)
@@ -262,10 +272,10 @@ async def factor_print(
         "TotalPureVolume": marketer[dd + "TPV"],
         "PureFee": marketer[dd + "PureFee"],
         "MarketerFee": marketer[dd + "MarFee"],
-        "Plan": marketer[dd + "Plan"],
+        # "Plan": marketer[dd + "Plan"],
         "Tax": marketer[dd + "Tax"],
         "Collateral": marketer[dd + "Collateral"],
-        "FinalFee": marketer[dd + "FinalFee"],
+        # "FinalFee": marketer[dd + "FinalFee"],
         "CollateralOfTwoMonthAgo": two_months_ago_coll,
         "Payment": marketer[dd + "Payment"],
     }
