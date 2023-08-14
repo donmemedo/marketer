@@ -19,7 +19,6 @@ app = FastAPI(
     redoc_url=setting.FASTAPI_REDOC,
 )
 
-
 app.add_middleware(
     CORSMiddleware,
     allow_origins=setting.ORIGINS.split(","),
@@ -44,7 +43,6 @@ def health_check():
 app.include_router(plan_router, prefix="")
 app.include_router(volume_and_fee_router, prefix="")
 app.include_router(user_router, prefix="")
-
 
 if __name__ == "__main__":
     uvicorn.run(app="main:app", host="0.0.0.0", port=8000, log_config=dictConfig(log_config))
