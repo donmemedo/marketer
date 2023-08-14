@@ -1,7 +1,8 @@
 from dataclasses import dataclass
+from datetime import date, datetime
 from enum import Enum, IntEnum
 from typing import Any, Dict, List
-from datetime import date
+
 from fastapi import Query
 from khayyam import JalaliDatetime
 
@@ -36,14 +37,21 @@ class UserTotalOut:
 
 @dataclass
 class ResponseOut:
-    timeGenerated: JalaliDatetime
+    timeGenerated: datetime
     result: List[UserTotalOut] = List[Any]
     error: str = Query("nothing")
 
 
 @dataclass
+class ErrorOut:
+    timeGenerated: datetime
+    result: Dict
+    error: Dict
+
+
+@dataclass
 class ResponseListOut:
-    timeGenerated: JalaliDatetime
+    timeGenerated: datetime
     result: Dict
     error: str = Query("nothing")
 
