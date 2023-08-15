@@ -1,4 +1,4 @@
-FROM registry.tech1a.co:81/repository/tech1a-docker-registry/python/python:3.9
+FROM registry.tech1a.co:81/repository/tech1a-docker-registry/python/python:3.10
 
 ENV TZ=Asia/Tehran
 
