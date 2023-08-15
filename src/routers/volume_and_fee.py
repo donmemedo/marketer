@@ -1,14 +1,17 @@
 from datetime import datetime, timedelta
 
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, status
+from fastapi.encoders import jsonable_encoder
+from fastapi.responses import JSONResponse
 from khayyam import JalaliDatetime
 from pymongo import MongoClient
 
 from src.auth.authentication import get_current_user
 from src.auth.authorization import authorize
 from src.schemas.schemas import (MarketerTotalIn, ResponseListOut, ResponseOut,
-                                 UsersListIn, UserTotalIn)
+                                 UsersListIn, UserTotalIn, ErrorOut)
 from src.tools.database import get_database
+from src.tools.messages import errors
 from src.tools.queries import *
 from src.tools.utils import get_marketer_name, to_gregorian_
 
@@ -21,20 +24,35 @@ async def get_user_total_trades(
         user: dict = Depends(get_current_user),
         args: UserTotalIn = Depends(UserTotalIn),
         brokerage: MongoClient = Depends(get_database),
-):
+) -> JSONResponse:
     # check if marketer exists and return his name
     query_result = brokerage.marketers.find_one({"IdpId": user.get("sub")})
 
     if query_result is None:
-        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Unauthorized User")
+        return JSONResponse(
+            status_code=status.HTTP_403_FORBIDDEN,
+            content=jsonable_encoder(
+                ErrorOut(
+                    error=errors.get("MARKETER_NOT_DEFINED"),
+                    timeGenerated=datetime.now(),
+                    result={}
+                )
+            )
+        )
 
-    # transform date from Jalali to Gregorian
-    from_gregorian_date = to_gregorian_(args.from_date)
-    to_gregorian_date = to_gregorian_(args.to_date)
-    to_gregorian_date = datetime.strptime(to_gregorian_date, "%Y-%m-%d") + timedelta(
-        days=1
-    )
-    to_gregorian_date = to_gregorian_date.strftime("%Y-%m-%d")
+    # # transform date from Jalali to Gregorian
+    # from_gregorian_date = to_gregorian_(args.from_date)
+    # to_gregorian_date = to_gregorian_(args.to_date)
+    # to_gregorian_date = datetime.strptime(to_gregorian_date, "%Y-%m-%d") + timedelta(
+    #     days=1
+    # )
+    # to_gregorian_date = to_gregorian_date.strftime("%Y-%m-%d")
+    #
+
+    from_gregorian_date = args.from_date
+    to_gregorian_date = (datetime.strptime(args.to_date, "%Y-%m-%d") + timedelta(days=1)).strftime("%Y-%m-%d")
+
+
 
     pipeline = [
         filter_users_stage([args.trade_code], from_gregorian_date, to_gregorian_date),
@@ -48,10 +66,15 @@ async def get_user_total_trades(
 
     result = next(brokerage.trades.aggregate(pipeline=pipeline), [])
 
-    return ResponseOut(
-        result=result,
-        timeGenerated=JalaliDatetime.now().strftime("%Y-%m-%dT%H:%M:%S.%f"),
-        error=""
+    return JSONResponse(
+        status_code=status.HTTP_200_OK,
+        content=jsonable_encoder(
+            ResponseOut(
+                result=result,
+                timeGenerated=datetime.now(),
+                error=""
+            )
+        )
     )
 
 
@@ -61,12 +84,21 @@ async def get_marketer_total_trades(
         user: dict = Depends(get_current_user),
         args: MarketerTotalIn = Depends(MarketerTotalIn),
         brokerage: MongoClient = Depends(get_database),
-):
+) -> JSONResponse:
     # check if marketer exists and return his name
     query_result = brokerage.marketers.find_one({"IdpId": user.get("sub")})
 
     if query_result is None:
-        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Unauthorized User")
+        return JSONResponse(
+            status_code=status.HTTP_403_FORBIDDEN,
+            content=jsonable_encoder(
+                ErrorOut(
+                    error=errors.get("MARKETER_NOT_DEFINED"),
+                    timeGenerated=datetime.now(),
+                    result={}
+                )
+            )
+        )
 
     marketer_fullname = get_marketer_name(query_result)
 
@@ -76,12 +108,18 @@ async def get_marketer_total_trades(
     trade_codes = brokerage.customers.distinct("PAMCode", query)
 
     # transform date from Jalali to Gregorian
-    from_gregorian_date = to_gregorian_(args.from_date)
-    to_gregorian_date = to_gregorian_(args.to_date)
-    to_gregorian_date = datetime.strptime(to_gregorian_date, "%Y-%m-%d") + timedelta(
-        days=1
-    )
-    to_gregorian_date = to_gregorian_date.strftime("%Y-%m-%d")
+    # from_gregorian_date = to_gregorian_(args.from_date)
+    # to_gregorian_date = to_gregorian_(args.to_date)
+    # to_gregorian_date = datetime.strptime(to_gregorian_date, "%Y-%m-%d") + timedelta(
+    #     days=1
+    # )
+    # to_gregorian_date = to_gregorian_date.strftime("%Y-%m-%d")
+    #
+    #
+
+    from_gregorian_date = args.from_date
+    to_gregorian_date = (datetime.strptime(args.to_date, "%Y-%m-%d") + timedelta(days=1)).strftime("%Y-%m-%d")
+
 
     pipeline = [
         filter_users_stage(trade_codes, from_gregorian_date, to_gregorian_date),
@@ -92,7 +130,16 @@ async def get_marketer_total_trades(
 
     result = next(brokerage.trades.aggregate(pipeline=pipeline), [])
 
-    return ResponseOut(timeGenerated=datetime.now(), result=result, error="")
+    return JSONResponse(
+        status_code=status.HTTP_200_OK,
+        content=jsonable_encoder(
+            ResponseOut(
+                timeGenerated=datetime.now(),
+                result=result,
+                error=""
+            )
+        )
+    )
 
 
 @volume_and_fee_router.get("/users-total", response_model=None)
@@ -101,22 +148,57 @@ async def users_list_by_volume(
         user: dict = Depends(get_current_user),
         args: UsersListIn = Depends(UsersListIn),
         brokerage: MongoClient = Depends(get_database),
-):
+) -> JSONResponse:
     # check if marketer exists and return his name
+    try:
+        JalaliDatetime.strptime(args.to_date, "%Y-%m-%d").todatetime()
+    except:
+        resp = {
+            "result": [],
+            "timeGenerated": datetime.now(),
+            "error": {
+                "message": "تاریخ انتها را درست وارد کنید.",
+                "code": "30010",
+            },
+        }
+        return JSONResponse(status_code=412, content=resp)
+    try:
+        JalaliDatetime.strptime(args.from_date, "%Y-%m-%d").todatetime()
+    except:
+        resp = {
+            "result": [],
+            "timeGenerated": datetime.now(),
+            "error": {
+                "message": "تاریخ ابتدا را درست وارد کنید.",
+                "code": "30010",
+            },
+        }
+        return JSONResponse(status_code=412, content=resp)
     query_result = brokerage.marketers.find_one({"IdpId": user.get("sub")})
 
-    if not query_result:
-        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Unauthorized User")
+    if query_result is None:
+        return JSONResponse(
+            status_code=status.HTTP_403_FORBIDDEN,
+            content=jsonable_encoder(
+                ErrorOut(
+                    error=errors.get("MARKETER_NOT_DEFINED"),
+                    timeGenerated=datetime.now(),
+                    result={}
+                )
+            )
+        )
 
     marketer_fullname = get_marketer_name(query_result)
 
-    from_gregorian_date = to_gregorian_(args.from_date)
-    to_gregorian_date = to_gregorian_(args.to_date)
-    to_gregorian_date = datetime.strptime(to_gregorian_date, "%Y-%m-%d") + timedelta(
-        days=1
-    )
-    to_gregorian_date = to_gregorian_date.strftime("%Y-%m-%d")
+    # from_gregorian_date = to_gregorian_(args.from_date)
+    # to_gregorian_date = to_gregorian_(args.to_date)
+    # to_gregorian_date = datetime.strptime(to_gregorian_date, "%Y-%m-%d") + timedelta(
+    #     days=1
+    # )
+    # to_gregorian_date = to_gregorian_date.strftime("%Y-%m-%d")
 
+    from_gregorian_date = args.from_date
+    to_gregorian_date = (datetime.strptime(args.to_date, "%Y-%m-%d") + timedelta(days=1)).strftime("%Y-%m-%d")
     query = {"Referer": {"$regex": marketer_fullname}}
 
     trade_codes = brokerage.customers.distinct("PAMCode", query)
@@ -145,7 +227,16 @@ async def users_list_by_volume(
             "totalCount": active_dict.get("total", 0),
         }
 
-        return ResponseListOut(timeGenerated=datetime.now(), result=result, error="")
+        return JSONResponse(
+            status_code=status.HTTP_200_OK,
+            content=jsonable_encoder(
+                ResponseListOut(
+                    timeGenerated=datetime.now(),
+                    result=result,
+                    error=""
+                )
+            )
+        )
 
     elif args.user_type.value == "inactive":
         active_users_pipeline = [
@@ -180,4 +271,13 @@ async def users_list_by_volume(
             "totalCount": inactive_dict.get("total", 0),
         }
 
-        return ResponseListOut(timeGenerated=datetime.now(), result=result, error="")
+        return JSONResponse(
+            status_code=status.HTTP_200_OK,
+            content=jsonable_encoder(
+                ResponseListOut(
+                    timeGenerated=datetime.now(),
+                    result=result,
+                    error=""
+                )
+            )
+        )

@@ -1,15 +1,22 @@
+from datetime import datetime
+
 import aiohttp
-from fastapi import Depends, HTTPException
+from fastapi import Depends, status
+from fastapi.encoders import jsonable_encoder
+from fastapi.responses import JSONResponse
 from fastapi.security import HTTPBearer
 from fastapi.security.http import HTTPAuthorizationCredentials
 from jose import jwt
+
+from src.schemas.schemas import ErrorOut
 from src.tools.config import setting
 from src.tools.logger import logger
+from src.tools.messages import errors
 
 bearer_scheme = HTTPBearer()
 
 
-async def fetch_public_key() -> str:
+async def fetch_public_key() -> str | JSONResponse:
     try:
         async with aiohttp.ClientSession(connector=aiohttp.TCPConnector(verify_ssl=False)) as session:
             async with session.get(setting.OPENID_CONFIGURATION_URL) as response:
@@ -24,10 +31,20 @@ async def fetch_public_key() -> str:
     except (aiohttp.ClientError, KeyError, IndexError) as err:
         logger.exception(f"Cannot connect to IDP: {err}")
         logger.error(f"Cannot connect to IDP: {err}")
-        raise HTTPException(status_code=500, detail="Failed to fetch public key")
+
+        return JSONResponse(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            content=jsonable_encoder(
+                ErrorOut(
+                    error=errors.get("CANNOT_FETCH_PUBLIC_KEY"),
+                    timeGenerated=datetime.now(),
+                    result={}
+                )
+            )
+        )
 
 
-def verify_token(token: str, public_key: str) -> dict:
+def verify_token(token: str, public_key: str) -> dict | JSONResponse:
     try:
         payload = jwt.decode(
             token,
@@ -36,19 +53,50 @@ def verify_token(token: str, public_key: str) -> dict:
             options={"verify_signature": False, "verify_aud": False},
         )
         return payload
+
+    except jwt.ExpiredSignatureError as err:
+        logger.error(f"Expired token: {err}")
+
+        return JSONResponse(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            content=jsonable_encoder(
+                ErrorOut(
+                    error=errors.get("TOKEN_EXPIRED"),
+                    timeGenerated=datetime.now(),
+                    result={}
+                )
+            )
+        )
+
     except jwt.JWTError as err:
         logger.error(f"Invalid token: {err}")
-        logger.exception(f"Invalid token: {err}")
-        raise HTTPException(status_code=401, detail="Invalid token")
+
+        return JSONResponse(
+            status_code=status.HTTP_403_FORBIDDEN,
+            content=jsonable_encoder(
+                ErrorOut(
+                    error=errors.get("MARKETER_NOT_DEFINED"),
+                    timeGenerated=datetime.now(),
+                    result={}
+                )
+            )
+        )
 
 
 async def get_current_user(
-    token: HTTPAuthorizationCredentials = Depends(bearer_scheme),
-):
+        token: HTTPAuthorizationCredentials = Depends(bearer_scheme),
+) -> dict | JSONResponse:
     if token.scheme != "Bearer":
-        logger.exception("Invalid authentication scheme")
         logger.error("Invalid authentication scheme")
-        raise HTTPException(status_code=401, detail="Invalid authentication scheme")
-
+        return JSONResponse(
+            status_code=status.HTTP_403_FORBIDDEN,
+            content=jsonable_encoder(
+                ErrorOut(
+                    error=errors.get("INVALID_AUTHENTICATION_SCHEME"),
+                    timeGenerated=datetime.now(),
+                    result={}
+                )
+            )
+        )
     public_key = await fetch_public_key()
     return verify_token(token.credentials, public_key)

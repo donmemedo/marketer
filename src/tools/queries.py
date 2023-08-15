@@ -18,6 +18,7 @@ def project_commission_stage():
             "Total": {"$multiply": ["$Price", "$Volume"]},
             "PriorityAcceptance": 1,
             "TotalCommission": 1,
+            "BondDividend": 1,
             "TradeItemBroker": 1,
             "TradeCode": 1,
             "Commission": {
@@ -48,6 +49,7 @@ def group_by_total_stage(_id):
             "TotalFee": {"$sum": "$TradeItemBroker"},
             "TotalPureVolume": {"$sum": "$Commission"},
             "TotalPriorityAcceptance": {"$sum": "$PriorityAcceptance"},
+            "TotalBondDividend": {"$sum": "$BondDividend"},
         }
     }
 
@@ -97,6 +99,12 @@ def project_fields_stage():
             "FirmRegisterLocation": "$UserProfile.FirmRegisterLocation",
             "Email": "$UserProfile.Email",
             "ActivityField": "$UserProfile.ActivityField",
+            "PartyTypeTitle": "$UserProfile.PartyTypeTitle",
+            "BourseCodes": "$UserProfile.BourseCodes",
+            "AccountCodes": "$UserProfile.AccountCodes",
+            "RefererTitle": "$UserProfile.RefererTitle",
+            "Phones": "$UserProfile.Phones",
+            "BrokerBranchTitle": "$UserProfile.BrokerBranchTitle",
         }
     }
 
