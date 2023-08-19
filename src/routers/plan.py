@@ -1,14 +1,18 @@
 from datetime import datetime, timedelta
 
 from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi.responses import JSONResponse
+from fastapi.encoders import jsonable_encoder
 from khayyam import JalaliDatetime as jd
 from pymongo import MongoClient
+from src.tools.messages import errors
 
 from src.auth.authentication import get_current_user
 from src.auth.authorization import authorize
-from src.schemas.schemas import CostIn, FactorIn, ResponseOut
+from src.schemas.schemas import CostIn, FactorIn, ResponseOut, MarketerTotalIn, ErrorOut
 from src.tools.database import get_database
-from src.tools.utils import peek, to_gregorian_
+from src.tools.utils import peek, to_gregorian_, get_marketer_name
+from src.tools.queries import *
 
 plan_router = APIRouter(prefix="/marketer", tags=["Marketer"])
 
@@ -287,3 +291,69 @@ async def factor_print(
     }
 
     return ResponseOut(timeGenerated=datetime.now(), result=result, error="")
+
+
+@plan_router.get("/marketer-total", response_model=None)
+@authorize(["Marketer.All"])
+async def get_marketer_total_trades(
+        user: dict = Depends(get_current_user),
+        args: MarketerTotalIn = Depends(MarketerTotalIn),
+        brokerage: MongoClient = Depends(get_database),
+) -> JSONResponse:
+    query_result = brokerage.marketers.find_one({"IdpId": user.get("sub")})
+    if query_result is None:
+        return JSONResponse(
+            status_code=status.HTTP_403_FORBIDDEN,
+            content=jsonable_encoder(
+                ErrorOut(
+                    error=errors.get("MARKETER_NOT_DEFINED"),
+                    timeGenerated=datetime.now(),
+                    result={}
+                )
+            )
+        )
+    marketer_fullname = get_marketer_name(query_result)
+    query = {"Referer": {"$regex": marketer_fullname}}
+    trade_codes = brokerage.customers.distinct("PAMCode", query)
+    from_gregorian_date = args.from_date
+    to_gregorian_date = (datetime.strptime(args.to_date, "%Y-%m-%d") + timedelta(days=1)).strftime("%Y-%m-%d")
+
+
+    pipeline = [
+        filter_users_stage(trade_codes, from_gregorian_date, to_gregorian_date),
+        project_commission_stage(),
+        group_by_total_stage("id"),
+        project_pure_stage()
+    ]
+
+    result = next(brokerage.trades.aggregate(pipeline=pipeline), [])
+    followers = dict(enumerate(brokerage.mrelations.find({"LeaderMarketerID": user.get("sub")},{"_id":0})))
+    FTF = 0
+    for i in followers:
+        query = {"Referer": followers[i]['FollowerMarketerName']}
+
+        trade_codes = brokerage.customers.distinct("PAMCode", query)
+        from_gregorian_date = args.from_date
+        to_gregorian_date = (datetime.strptime(args.to_date, "%Y-%m-%d") + timedelta(days=1)).strftime("%Y-%m-%d")
+        pipeline = [
+            filter_users_stage(trade_codes, from_gregorian_date, to_gregorian_date),
+            project_commission_stage(),
+            group_by_total_stage("id"),
+            project_pure_stage()
+        ]
+        fresult = next(brokerage.trades.aggregate(pipeline=pipeline), [])
+        FTF = FTF + fresult['TotalFee']*followers[i]['CommissionCoefficient']
+    result["Total Fee of Followers"] = FTF
+
+    return JSONResponse(
+        status_code=status.HTTP_200_OK,
+        content=jsonable_encoder(
+            ResponseOut(
+                timeGenerated=datetime.now(),
+                result=result,
+                error=""
+            )
+        )
+    )
+
+
