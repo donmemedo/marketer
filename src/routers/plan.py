@@ -54,14 +54,6 @@ async def cal_marketer_cost(
     customers_records = brokerage.customers.find(query, fields)
     trade_codes = [c.get("PAMCode") for c in customers_records]
 
-    # transform dates
-    # from_gregorian_date = to_gregorian_(args.from_date)
-    # to_gregorian_date = to_gregorian_(args.to_date)
-    # to_gregorian_date = datetime.strptime(to_gregorian_date, "%Y-%m-%d") + timedelta(
-    #     days=1
-    # )
-    # to_gregorian_date = to_gregorian_date.strftime("%Y-%m-%d")
-
     from_gregorian_date = args.from_date
     to_gregorian_date = (datetime.strptime(args.to_date, "%Y-%m-%d") + timedelta(days=1)).strftime("%Y-%m-%d")
 
@@ -167,7 +159,6 @@ async def cal_marketer_cost(
         "almas": {"start": 400000000000, "marketer_share": 0.4},
     }
 
-    # pure_fee = marketer_total.get("TotalFee") * .65
     pure_fee = marketer_total.get("TotalFee") * 0.65
     marketer_fee = 0
     tpv = marketer_total.get("TotalPureVolume")
@@ -205,7 +196,6 @@ async def cal_marketer_cost(
         plan = "Almas"
         next_plan = 0
 
-    # final_fee = pure_fee + marketer_fee
     final_fee = marketer_fee
     salary = 0
     insurance = 0
@@ -217,16 +207,13 @@ async def cal_marketer_cost(
             final_fee -= insurance
 
     if args.tax != 0:
-        # final_fee -= args.tax
         tax = marketer_fee * args.tax
         final_fee -= tax
 
     if args.collateral != 0:
-        # final_fee -= args.tax
         collateral = marketer_fee * args.collateral
         final_fee -= collateral
     if args.tax == 0 and args.collateral == 0:
-        # final_fee -= args.tax
         collateral = marketer_fee * 0.05
         tax = marketer_fee * 0.1
         final_fee -= final_fee * 0.15
@@ -264,29 +251,15 @@ async def factor_print(
     if args.month == "2" or args.month == "02":
         cc = str(int(args.year) - 1) + "12"
     two_months_ago_coll = marketer[cc + "Collateral"]
-    # from_date = f"{args.year}-{args.month}-01"
-    # from_gregorian_date = to_gregorian_(from_date)
-    # to_date = jd.strptime(from_date, "%Y-%m-%d")
-    # dorehh = f"{args.year} {to_date.monthname()}"
-    # to_date = to_date.replace(day=to_date.daysinmonth).strftime("%Y-%m-%d")
-    # to_gregorian_date = to_gregorian_(to_date)
-    # to_gregorian_date = datetime.strptime(to_gregorian_date, "%Y-%m-%d") + timedelta(
-    #     days=1
-    # )
-    # to_gregorian_date = to_gregorian_date.strftime("%Y-%m-%d")
-
-
 
     result = {
-        "TotalFee": marketer[dd + "TF"],
-        "TotalPureVolume": marketer[dd + "TPV"],
+        "TotalFee": marketer[dd + "TotalFee"],
+        "TotalPureVolume": marketer[dd + "TotalPureVolume"],
         "PureFee": marketer[dd + "PureFee"],
-        "MarketerFee": marketer[dd + "MarFee"],
-        # "Plan": marketer[dd + "Plan"],
-        "Tax": marketer[dd + "Tax"],
-        "Collateral": marketer[dd + "Collateral"],
-        # "FinalFee": marketer[dd + "FinalFee"],
-        "CollateralOfTwoMonthAgo": two_months_ago_coll,
+        "MarketerFee": marketer[dd + "MarketerFee"],
+        "TotalFeeOfFollowers": marketer[dd + "TotalFeeOfFollowers"],
+        "Collateral": marketer[dd + "CollateralOfThisMonth"],
+        "Deductions": marketer[dd + "SumOfDeductions"],
         "Payment": marketer[dd + "Payment"],
     }
 
@@ -343,7 +316,7 @@ async def get_marketer_total_trades(
         ]
         fresult = next(brokerage.trades.aggregate(pipeline=pipeline), [])
         FTF = FTF + fresult['TotalFee']*followers[i]['CommissionCoefficient']
-    result["Total Fee of Followers"] = FTF
+    result["TotalFeeOfFollowers"] = FTF
 
     return JSONResponse(
         status_code=status.HTTP_200_OK,
