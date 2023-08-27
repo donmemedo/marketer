@@ -47,7 +47,9 @@ async def cal_marketer_cost(
     if marketer_dict is None:
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Unauthorized user")
 
-    query = {"Referer": {"$regex": marketer_dict.get("FirstName")}}
+    # query = {"Referer": {"$regex": marketer_dict.get("FirstName")}}
+    marketer_fullname = get_marketer_name(marketer_dict)
+    query = {"Referer": marketer_fullname}
 
     fields = {"PAMCode": 1}
 
