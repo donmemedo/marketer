@@ -40,13 +40,8 @@ async def get_user_total_trades(
             )
         )
 
-    # transform date from Jalali to Gregorian
-    from_gregorian_date = to_gregorian_(args.from_date)
-    to_gregorian_date = to_gregorian_(args.to_date)
-    to_gregorian_date = datetime.strptime(to_gregorian_date, "%Y-%m-%d") + timedelta(
-        days=1
-    )
-    to_gregorian_date = to_gregorian_date.strftime("%Y-%m-%d")
+    from_gregorian_date = args.from_date
+    to_gregorian_date = (datetime.strptime(args.to_date, "%Y-%m-%d") + timedelta(days=1)).strftime("%Y-%m-%d")
 
     pipeline = [
         filter_users_stage([args.trade_code], from_gregorian_date, to_gregorian_date),
@@ -97,17 +92,13 @@ async def get_marketer_total_trades(
     marketer_fullname = get_marketer_name(query_result)
 
     # Get all customers
-    query = {"Referer": {"$regex": marketer_fullname}}
+    # query = {"Referer": {"$regex": marketer_fullname}}
+    query = {"Referer": marketer_fullname}
+
 
     trade_codes = brokerage.customers.distinct("PAMCode", query)
-
-    # transform date from Jalali to Gregorian
-    from_gregorian_date = to_gregorian_(args.from_date)
-    to_gregorian_date = to_gregorian_(args.to_date)
-    to_gregorian_date = datetime.strptime(to_gregorian_date, "%Y-%m-%d") + timedelta(
-        days=1
-    )
-    to_gregorian_date = to_gregorian_date.strftime("%Y-%m-%d")
+    from_gregorian_date = args.from_date
+    to_gregorian_date = (datetime.strptime(args.to_date, "%Y-%m-%d") + timedelta(days=1)).strftime("%Y-%m-%d")
 
     pipeline = [
         filter_users_stage(trade_codes, from_gregorian_date, to_gregorian_date),
@@ -177,17 +168,11 @@ async def users_list_by_volume(
         )
 
     marketer_fullname = get_marketer_name(query_result)
-
-    # from_gregorian_date = to_gregorian_(args.from_date)
-    # to_gregorian_date = to_gregorian_(args.to_date)
-    # to_gregorian_date = datetime.strptime(to_gregorian_date, "%Y-%m-%d") + timedelta(
-    #     days=1
-    # )
-    # to_gregorian_date = to_gregorian_date.strftime("%Y-%m-%d")
-
     from_gregorian_date = args.from_date
     to_gregorian_date = (datetime.strptime(args.to_date, "%Y-%m-%d") + timedelta(days=1)).strftime("%Y-%m-%d")
-    query = {"Referer": {"$regex": marketer_fullname}}
+    # query = {"Referer": {"$regex": marketer_fullname}}
+    query = {"Referer": marketer_fullname}
+
 
     trade_codes = brokerage.customers.distinct("PAMCode", query)
 

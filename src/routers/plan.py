@@ -1,14 +1,18 @@
 from datetime import datetime, timedelta
 
 from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi.responses import JSONResponse
+from fastapi.encoders import jsonable_encoder
 from khayyam import JalaliDatetime as jd
 from pymongo import MongoClient
+from src.tools.messages import errors
 
 from src.auth.authentication import get_current_user
 from src.auth.authorization import authorize
-from src.schemas.schemas import CostIn, FactorIn, ResponseOut
+from src.schemas.schemas import CostIn, FactorIn, ResponseOut, MarketerTotalIn, ErrorOut
 from src.tools.database import get_database
-from src.tools.utils import peek, to_gregorian_
+from src.tools.utils import peek, to_gregorian_, get_marketer_name
+from src.tools.queries import *
 
 plan_router = APIRouter(prefix="/marketer", tags=["Marketer"])
 
@@ -43,20 +47,18 @@ async def cal_marketer_cost(
     if marketer_dict is None:
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Unauthorized user")
 
-    query = {"Referer": {"$regex": marketer_dict.get("FirstName")}}
+    # query = {"Referer": {"$regex": marketer_dict.get("FirstName")}}
+    marketer_fullname = get_marketer_name(marketer_dict)
+    query = {"Referer": marketer_fullname}
 
     fields = {"PAMCode": 1}
 
     customers_records = brokerage.customers.find(query, fields)
     trade_codes = [c.get("PAMCode") for c in customers_records]
 
-    # transform dates
-    from_gregorian_date = to_gregorian_(args.from_date)
-    to_gregorian_date = to_gregorian_(args.to_date)
-    to_gregorian_date = datetime.strptime(to_gregorian_date, "%Y-%m-%d") + timedelta(
-        days=1
-    )
-    to_gregorian_date = to_gregorian_date.strftime("%Y-%m-%d")
+    from_gregorian_date = args.from_date
+    to_gregorian_date = (datetime.strptime(args.to_date, "%Y-%m-%d") + timedelta(days=1)).strftime("%Y-%m-%d")
+
 
     buy_pipeline = [
         {
@@ -159,7 +161,6 @@ async def cal_marketer_cost(
         "almas": {"start": 400000000000, "marketer_share": 0.4},
     }
 
-    # pure_fee = marketer_total.get("TotalFee") * .65
     pure_fee = marketer_total.get("TotalFee") * 0.65
     marketer_fee = 0
     tpv = marketer_total.get("TotalPureVolume")
@@ -197,7 +198,6 @@ async def cal_marketer_cost(
         plan = "Almas"
         next_plan = 0
 
-    # final_fee = pure_fee + marketer_fee
     final_fee = marketer_fee
     salary = 0
     insurance = 0
@@ -209,16 +209,13 @@ async def cal_marketer_cost(
             final_fee -= insurance
 
     if args.tax != 0:
-        # final_fee -= args.tax
         tax = marketer_fee * args.tax
         final_fee -= tax
 
     if args.collateral != 0:
-        # final_fee -= args.tax
         collateral = marketer_fee * args.collateral
         final_fee -= collateral
     if args.tax == 0 and args.collateral == 0:
-        # final_fee -= args.tax
         collateral = marketer_fee * 0.05
         tax = marketer_fee * 0.1
         final_fee -= final_fee * 0.15
@@ -256,28 +253,82 @@ async def factor_print(
     if args.month == "2" or args.month == "02":
         cc = str(int(args.year) - 1) + "12"
     two_months_ago_coll = marketer[cc + "Collateral"]
-    from_date = f"{args.year}-{args.month}-01"
-    from_gregorian_date = to_gregorian_(from_date)
-    to_date = jd.strptime(from_date, "%Y-%m-%d")
-    dorehh = f"{args.year} {to_date.monthname()}"
-    to_date = to_date.replace(day=to_date.daysinmonth).strftime("%Y-%m-%d")
-    to_gregorian_date = to_gregorian_(to_date)
-    to_gregorian_date = datetime.strptime(to_gregorian_date, "%Y-%m-%d") + timedelta(
-        days=1
-    )
-    to_gregorian_date = to_gregorian_date.strftime("%Y-%m-%d")
 
     result = {
-        "TotalFee": marketer[dd + "TF"],
-        "TotalPureVolume": marketer[dd + "TPV"],
+        "TotalFee": marketer[dd + "TotalFee"],
+        "TotalPureVolume": marketer[dd + "TotalPureVolume"],
         "PureFee": marketer[dd + "PureFee"],
-        "MarketerFee": marketer[dd + "MarFee"],
-        # "Plan": marketer[dd + "Plan"],
-        "Tax": marketer[dd + "Tax"],
-        "Collateral": marketer[dd + "Collateral"],
-        # "FinalFee": marketer[dd + "FinalFee"],
-        "CollateralOfTwoMonthAgo": two_months_ago_coll,
+        "MarketerFee": marketer[dd + "MarketerFee"],
+        "TotalFeeOfFollowers": marketer[dd + "TotalFeeOfFollowers"],
+        "Collateral": marketer[dd + "CollateralOfThisMonth"],
+        "Deductions": marketer[dd + "SumOfDeductions"],
         "Payment": marketer[dd + "Payment"],
     }
 
     return ResponseOut(timeGenerated=datetime.now(), result=result, error="")
+
+
+@plan_router.get("/marketer-total", response_model=None)
+@authorize(["Marketer.All"])
+async def get_marketer_total_trades(
+        user: dict = Depends(get_current_user),
+        args: MarketerTotalIn = Depends(MarketerTotalIn),
+        brokerage: MongoClient = Depends(get_database),
+) -> JSONResponse:
+    query_result = brokerage.marketers.find_one({"IdpId": user.get("sub")})
+    if query_result is None:
+        return JSONResponse(
+            status_code=status.HTTP_403_FORBIDDEN,
+            content=jsonable_encoder(
+                ErrorOut(
+                    error=errors.get("MARKETER_NOT_DEFINED"),
+                    timeGenerated=datetime.now(),
+                    result={}
+                )
+            )
+        )
+    marketer_fullname = get_marketer_name(query_result)
+    query = {"Referer": {"$regex": marketer_fullname}}
+    trade_codes = brokerage.customers.distinct("PAMCode", query)
+    from_gregorian_date = args.from_date
+    to_gregorian_date = (datetime.strptime(args.to_date, "%Y-%m-%d") + timedelta(days=1)).strftime("%Y-%m-%d")
+
+
+    pipeline = [
+        filter_users_stage(trade_codes, from_gregorian_date, to_gregorian_date),
+        project_commission_stage(),
+        group_by_total_stage("id"),
+        project_pure_stage()
+    ]
+
+    result = next(brokerage.trades.aggregate(pipeline=pipeline), [])
+    followers = dict(enumerate(brokerage.mrelations.find({"LeaderMarketerID": user.get("sub")},{"_id":0})))
+    FTF = 0
+    for i in followers:
+        query = {"Referer": followers[i]['FollowerMarketerName']}
+
+        trade_codes = brokerage.customers.distinct("PAMCode", query)
+        from_gregorian_date = args.from_date
+        to_gregorian_date = (datetime.strptime(args.to_date, "%Y-%m-%d") + timedelta(days=1)).strftime("%Y-%m-%d")
+        pipeline = [
+            filter_users_stage(trade_codes, from_gregorian_date, to_gregorian_date),
+            project_commission_stage(),
+            group_by_total_stage("id"),
+            project_pure_stage()
+        ]
+        fresult = next(brokerage.trades.aggregate(pipeline=pipeline), [])
+        FTF = FTF + fresult['TotalFee']*followers[i]['CommissionCoefficient']
+    result["TotalFeeOfFollowers"] = FTF
+
+    return JSONResponse(
+        status_code=status.HTTP_200_OK,
+        content=jsonable_encoder(
+            ResponseOut(
+                timeGenerated=datetime.now(),
+                result=result,
+                error=""
+            )
+        )
+    )
+
+
