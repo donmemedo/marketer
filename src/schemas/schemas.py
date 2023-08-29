@@ -100,6 +100,7 @@ class SortOrder(IntEnum):
 
 @dataclass
 class UsersListIn(Pages):
+    name: str = Query("", alias="Name")
     sort_by: SortField = Query(SortField.REGISTRATION_DATE, alias="SortBy")
     sort_order: SortOrder = Query(SortOrder.ASCENDING, alias="SortOrder")
     user_type: UserTypeEnum = Query(UserTypeEnum.active, alias="UserType")

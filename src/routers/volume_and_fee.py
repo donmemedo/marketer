@@ -172,7 +172,17 @@ async def users_list_by_volume(
     to_gregorian_date = (datetime.strptime(args.to_date, "%Y-%m-%d") + timedelta(days=1)).strftime("%Y-%m-%d")
     # query = {"Referer": {"$regex": marketer_fullname}}
     query = {"Referer": marketer_fullname}
-
+    if args.name:
+        name = args.name.split()
+        query = {"$and": [
+                    {"Referer": marketer_fullname},
+                    {"$or": [
+                        {"FirstName": {"$regex": args.name}},
+                        {"FirstName": {"$in": name}},
+                        {"LastName": {"$regex": args.name}},
+                        {"LastName": {"$in": name}},
+                        ]},
+                    ]}
 
     trade_codes = brokerage.customers.distinct("PAMCode", query)
 
