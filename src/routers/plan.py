@@ -6,7 +6,7 @@ from fastapi.encoders import jsonable_encoder
 from khayyam import JalaliDatetime as jd
 from pymongo import MongoClient
 from src.tools.messages import errors
-
+from src.tools.config import setting
 from src.auth.authentication import get_current_user
 from src.auth.authorization import authorize
 from src.schemas.schemas import CostIn, FactorIn, ResponseOut, MarketerTotalIn, ErrorOut
@@ -23,7 +23,9 @@ async def get_marketer_profile(
         user: dict = Depends(get_current_user),
         brokerage: MongoClient = Depends(get_database),
 ):
-    result = brokerage.marketers.find_one({"IdpId": user.get("sub")}, {"_id": 0})
+    # result = brokerage.marketers.find_one({"IdpId": user.get("sub")}, {"_id": 0})
+    marketers_col = brokerage[setting.MARKETERS_COLLECTION]
+    result = marketers_col.find_one({"Id": user.get("sub")}, {"_id": 0})
 
     if result is None:
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Unauthorized user")

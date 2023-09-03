@@ -2,9 +2,13 @@ from pydantic import BaseSettings
 
 
 class Settings(BaseSettings):
-    VERSION = "0.0.1"
-    MONGO_CONNECTION_STRING = "mongodb://root:1qaz1qaz@localhost:27017/"
+    VERSION = "1.1.0"
+    MONGO_CONNECTION_STRING = "mongodb://root:root@172.24.65.105:30001/"#"mongodb://root:1qaz1qaz@localhost:27017/"
     MONGO_DATABASE = "brokerage"
+    MARKETERS_COLLECTION = "newmarketersss"
+    CUSTOMERS_COLLECTION = "customers"
+    FACTORS_COLLECTION = "factorsss"
+    TRADES_COLLECTION = "trades"
     SWAGGER_TITLE = "Marketer API"
     SPLUNK_HOST = "172.24.65.206"
     SPLUNK_PORT = 5141
