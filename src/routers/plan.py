@@ -44,14 +44,20 @@ async def cal_marketer_cost(
         brokerage: MongoClient = Depends(get_database)
 ):
     # check if marketer exists and return his name
-    marketer_dict = brokerage.marketers.find_one({"IdpId": user.get("sub")}, {"_id": 0})
+    # marketer_dict = brokerage.marketers.find_one({"IdpId": user.get("sub")}, {"_id": 0})
+    marketers_col = brokerage[setting.MARKETERS_COLLECTION]
+    marketer_dict = marketers_col.find_one({"Id": user.get("sub")}, {"_id": 0})
 
     if marketer_dict is None:
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Unauthorized user")
 
     # query = {"Referer": {"$regex": marketer_dict.get("FirstName")}}
-    marketer_fullname = get_marketer_name(marketer_dict)
-    query = {"Referer": marketer_fullname}
+    # marketer_fullname = get_marketer_name(marketer_dict)
+    # query = {"Referer": marketer_fullname}
+    try:
+        query = {"Referer": marketer_dict['TbsReagentName']}
+    except:
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Unauthorized user")
 
     fields = {"PAMCode": 1}
 
@@ -246,7 +252,7 @@ async def factor_print(
         args: FactorIn = Depends(FactorIn),
         brokerage: MongoClient = Depends(get_database),
 ):
-    factors_coll = brokerage["factors"]
+    factors_coll = brokerage[setting.FACTORS_COLLECTION]
     marketer = factors_coll.find_one({"IdpID": user.get("sub")})
     dd = args.year + f"{int(args.month):02}"
     cc = args.year + f"{int(args.month) - 2:02}"

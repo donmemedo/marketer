@@ -7,7 +7,7 @@ from fastapi import Query
 from khayyam import JalaliDatetime
 
 current_date = JalaliDatetime.today().replace(day=1).strftime("%Y-%m-%d")
-
+georgian_current_date = date.today().isoformat()
 
 @dataclass
 class UserSearchIn:
@@ -19,14 +19,14 @@ class UserSearchIn:
 @dataclass
 class UserTotalIn:
     trade_code: str = Query(alias="TradeCode")
-    from_date: str = Query(default=current_date, alias="StartDate")
-    to_date: str = Query(default=current_date, alias="EndDate")
+    from_date: str = Query(default=georgian_current_date, alias="StartDate")
+    to_date: str = Query(default=georgian_current_date, alias="EndDate")
 
 
 @dataclass
 class MarketerTotalIn:
-    from_date: str = Query(default=current_date, alias="StartDate")
-    to_date: str = Query(default=current_date, alias="EndDate")
+    from_date: str = Query(default=georgian_current_date, alias="StartDate")
+    to_date: str = Query(default=georgian_current_date, alias="EndDate")
 
 
 @dataclass
@@ -67,8 +67,8 @@ class CostIn:
     tax: int = Query(0, alias="Tax")
     salary: int = Query(0, alias="Salary")
     collateral: int = Query(0, alias="Collateral")
-    from_date: str = Query(current_date, alias="StartDate")
-    to_date: str = Query(current_date, alias="EndDate")
+    from_date: str = Query(georgian_current_date, alias="StartDate")
+    to_date: str = Query(georgian_current_date, alias="EndDate")
 
 
 @dataclass
@@ -104,8 +104,8 @@ class UsersListIn(Pages):
     sort_by: SortField = Query(SortField.REGISTRATION_DATE, alias="SortBy")
     sort_order: SortOrder = Query(SortOrder.ASCENDING, alias="SortOrder")
     user_type: UserTypeEnum = Query(UserTypeEnum.active, alias="UserType")
-    from_date: str = Query(date.today().isoformat(), alias="StartDate")
-    to_date: str = Query(date.today().isoformat(), alias="EndDate")
+    from_date: str = Query(georgian_current_date, alias="StartDate")
+    to_date: str = Query(georgian_current_date, alias="EndDate")
 
 
 @dataclass
