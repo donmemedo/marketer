@@ -12,7 +12,7 @@ current_date = JalaliDatetime.today().replace(day=1).strftime("%Y-%m-%d")
 @dataclass
 class UserSearchIn:
     name: str = Query("", alias="Name")
-    page_index: int = Query(1, alias="PageNumber")
+    page_index: int = Query(0, alias="PageNumber")
     page_size: int = Query(5, alias="PageSize")
 
 
@@ -80,7 +80,7 @@ class MarketerInvitationIn:
 @dataclass
 class Pages:
     size: int = Query(10, alias="PageSize")
-    page: int = Query(1, alias="PageNumber")
+    page: int = Query(0, alias="PageNumber")
 
 
 class UserTypeEnum(str, Enum):
@@ -115,3 +115,10 @@ class FactorIn:
     collateral: int = Query(0)
     month: str = Query(JalaliDatetime.today().month)
     year: str = Query(JalaliDatetime.today().year)
+
+
+@dataclass
+class AllFactors:
+    status: int = Query(None, alias="FactorStatus")
+    page_index: int = Query(0, alias="PageNumber")
+    page_size: int = Query(5, alias="PageSize")

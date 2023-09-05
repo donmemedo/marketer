@@ -24,5 +24,9 @@ errors = {
     "CANNOT_FETCH_PUBLIC_KEY": MarketerErrors(
         code=5,
         message="خطای عدم دسترسی به کلید عمومی سرویس احراز هویت"
+    ),
+    "MARKETER_FACTORS_NOT_FOUND": MarketerErrors(
+        code=6,
+        message="فاکتوری برای شما در دیتابیس وجود ندارد."
     )
 }

@@ -1,5 +1,6 @@
 from datetime import datetime, timedelta
 
+import pymongo
 from fastapi import APIRouter, Depends, HTTPException, status
 from fastapi.responses import JSONResponse
 from fastapi.encoders import jsonable_encoder
@@ -9,9 +10,10 @@ from src.tools.messages import errors
 
 from src.auth.authentication import get_current_user
 from src.auth.authorization import authorize
-from src.schemas.schemas import CostIn, FactorIn, ResponseOut, MarketerTotalIn, ErrorOut
+from src.schemas.schemas import CostIn, FactorIn, ResponseOut, MarketerTotalIn, ErrorOut, AllFactors
 from src.tools.database import get_database
 from src.tools.utils import peek, to_gregorian_, get_marketer_name
+from src.tools.config import *
 from src.tools.queries import *
 
 plan_router = APIRouter(prefix="/marketer", tags=["Marketer"])
@@ -332,3 +334,77 @@ async def get_marketer_total_trades(
     )
 
 
+@plan_router.get("/factor/get-all", response_model=None)
+@authorize(["Marketer.All"])
+async def get_marketer_all_factors(
+        user: dict = Depends(get_current_user),
+        args: AllFactors = Depends(AllFactors),
+        brokerage: MongoClient = Depends(get_database),
+) -> JSONResponse:
+    factors_coll = brokerage[setting.FACTORS_COLLECTION]
+    if args.status:
+        filter = {
+            "$and": [
+                {"MarketerID": "87b9f6da-1d9c-4da2-bf2e-59fa9d938068"},#user.get("sub")},
+                {"Status": args.status},
+            ]
+        }
+    else:
+        filter = {"MarketerID": "87b9f6da-1d9c-4da2-bf2e-59fa9d938068"}#user.get("sub")}
+
+    query_result = factors_coll.find(filter,{"_id":False}).skip(args.page_size * args.page_index).limit(args.page_size)
+    factors = sorted(list(query_result), key=lambda d: d['Period'])#list(query_result)
+
+    total_count = factors_coll.count_documents(filter)
+    if not factors:
+        return JSONResponse(
+            status_code=status.HTTP_404_NOT_FOUND,
+            content=jsonable_encoder(
+                ErrorOut(
+                    error=errors.get("MARKETER_FACTORS_NOT_FOUND"),
+                    timeGenerated=datetime.now(),
+                    result={}
+                )
+            )
+        )
+    results = []
+    for factor in factors:
+        factor_details = {
+            "TotalTurnOver": factor["TotalTurnOver"],
+            "TotalBrokerCommission": factor["TotalBrokerCommission"],
+            "TotalNetBrokerCommission": factor["TotalNetBrokerCommission"],
+            "MarketerCommissionIncome": factor["MarketerCommissionIncome"],
+            "TotalFeeOfFollowers": factor["TotalFeeOfFollowers"],
+            "CollateralOfThisMonth": factor["CollateralOfThisMonth"],
+            "SumOfDeductions": factor["SumOfDeductions"],
+            "SumOfAdditions": factor["SumOfAdditions"],
+            "Payment": factor["Payment"],
+            "Period": factor["Period"],
+            "Status": factor["Status"],
+        }
+        # result = {
+        #     "FactorID": factor["FactorID"],
+        #     "TotalTurnOver": factor["TotalTurnOver"],
+        #     "TotalBrokerCommission": factor["TotalBrokerCommission"],
+        #     "TotalNetBrokerCommission": factor["TotalNetBrokerCommission"],
+        #     "MarketerCommissionIncome": factor["MarketerCommissionIncome"],
+        #     "TotalFeeOfFollowers": factor["TotalFeeOfFollowers"],
+        #     "CollateralOfThisMonth": factor["CollateralOfThisMonth"],
+        #     "SumOfDeductions": factor["SumOfDeductions"],
+        #     "SumOfAdditions": factor["SumOfAdditions"],
+        #     "Payment": factor["Payment"],
+        #     "Period": factor["Period"],
+        #     "Status": factor["Status"],
+        # }
+        result = {factor["ID"]:factor_details}
+        results.append(result)
+    resp = {
+        "pagedData": results,
+        "timeGenerated": jd.now().strftime("%Y-%m-%dT%H:%M:%S.%f"),
+        "error": {
+            "message": "Null",
+            "code": "Null",
+        },
+        "totalCount": total_count
+    }
+    return JSONResponse(status_code=200, content=resp)
