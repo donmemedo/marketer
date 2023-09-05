@@ -345,12 +345,12 @@ async def get_marketer_all_factors(
     if args.status:
         filter = {
             "$and": [
-                {"MarketerID": "87b9f6da-1d9c-4da2-bf2e-59fa9d938068"},#user.get("sub")},
+                {"MarketerID": user.get("sub")},
                 {"Status": args.status},
             ]
         }
     else:
-        filter = {"MarketerID": "87b9f6da-1d9c-4da2-bf2e-59fa9d938068"}#user.get("sub")}
+        filter = {"MarketerID": user.get("sub")}
 
     query_result = factors_coll.find(filter,{"_id":False}).skip(args.page_size * args.page_index).limit(args.page_size)
     factors = sorted(list(query_result), key=lambda d: d['Period'])#list(query_result)
