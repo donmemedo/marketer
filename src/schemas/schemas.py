@@ -118,6 +118,11 @@ class FactorIn:
 
 
 @dataclass
+class WalletIn:
+    Period: str = f"{JalaliDatetime.today().year}{JalaliDatetime.today().month:02}"
+
+
+@dataclass
 class AllFactors:
     status: int = Query(None, alias="FactorStatus")
     page_index: int = Query(0, alias="PageNumber")

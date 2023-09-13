@@ -10,7 +10,8 @@ class Settings(BaseSettings):
     SPLUNK_PORT = 5141
     FASTAPI_DOCS = "/docs"
     FASTAPI_REDOC = "/redoc"
-    FACTORS_COLLECTION = "napfactorsss"
+    FACTORS_COLLECTION = "MarketerFactor"
+    MARKETERS_COLLECTION = "MarketerTable"
     ORIGINS = "*"
     TOKEN_URL = "https://cluster.tech1a.co/connect/token"
     CLIENT_ID = "M2M.RegisterServicePermission"
