@@ -10,7 +10,7 @@ from src.tools.messages import errors
 
 from src.auth.authentication import get_current_user
 from src.auth.authorization import authorize
-from src.schemas.schemas import CostIn, FactorIn, ResponseOut, MarketerTotalIn, ErrorOut, AllFactors
+from src.schemas.schemas import *
 from src.tools.database import get_database
 from src.tools.utils import peek, to_gregorian_, get_marketer_name
 from src.tools.config import *
@@ -243,28 +243,20 @@ async def cal_marketer_cost(
 @authorize(["Marketer.All"])
 async def factor_print(
         user: dict = Depends(get_current_user),
-        args: FactorIn = Depends(FactorIn),
+        args: WalletIn = Depends(WalletIn),
         brokerage: MongoClient = Depends(get_database),
 ):
-    factors_coll = brokerage["factors"]
-    marketer = factors_coll.find_one({"IdpID": user.get("sub")})
-    dd = args.year + f"{int(args.month):02}"
-    cc = args.year + f"{int(args.month) - 2:02}"
-    if args.month == "1" or args.month == "01":
-        cc = str(int(args.year) - 1) + "11"
-    if args.month == "2" or args.month == "02":
-        cc = str(int(args.year) - 1) + "12"
-    two_months_ago_coll = marketer[cc + "Collateral"]
-
+    factors_coll = brokerage[setting.FACTORS_COLLECTION]
+    marketer = factors_coll.find_one({"$and":[{"MarketerID": user.get("sub")},{"Period":args.Period}]})
     result = {
-        "TotalFee": marketer[dd + "TotalFee"],
-        "TotalPureVolume": marketer[dd + "TotalPureVolume"],
-        "PureFee": marketer[dd + "PureFee"],
-        "MarketerFee": marketer[dd + "MarketerFee"],
-        "TotalFeeOfFollowers": marketer[dd + "TotalFeeOfFollowers"],
-        "Collateral": marketer[dd + "CollateralOfThisMonth"],
-        "Deductions": marketer[dd + "SumOfDeductions"],
-        "Payment": marketer[dd + "Payment"],
+        "TotalTurnOver": marketer["TotalTurnOver"],
+        "TotalBrokerCommission": marketer["TotalBrokerCommission"],
+        "TotalNetBrokerCommission": marketer["TotalNetBrokerCommission"],
+        "MarketerCommissionIncome": marketer["MarketerCommissionIncome"],
+        "TotalFeeOfFollowers": marketer["TotalFeeOfFollowers"],
+        "CollateralOfThisMonth": marketer["CollateralOfThisMonth"],
+        "SumOfDeductions": marketer["SumOfDeductions"],
+        "Payment": marketer["Payment"],
     }
 
     return ResponseOut(timeGenerated=datetime.now(), result=result, error="")
