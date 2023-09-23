@@ -115,3 +115,15 @@ class FactorIn:
     collateral: int = Query(0)
     month: str = Query(JalaliDatetime.today().month)
     year: str = Query(JalaliDatetime.today().year)
+
+
+@dataclass
+class WalletIn:
+    Period: str = f"{JalaliDatetime.today().year}{JalaliDatetime.today().month:02}"
+
+
+@dataclass
+class AllFactors:
+    status: int = Query(None, alias="FactorStatus")
+    page_index: int = Query(1, alias="PageNumber")
+    page_size: int = Query(5, alias="PageSize")

@@ -8,7 +8,7 @@ from src.auth.authorization import authorize
 from src.schemas.schemas import ResponseListOut, UserSearchIn
 from src.tools.database import get_database
 from src.tools.utils import get_marketer_name
-
+from src.tools.config import setting
 user_router = APIRouter(prefix="/user", tags=["User"])
 
 
@@ -20,12 +20,13 @@ async def get_user_profile(
         brokerage: MongoClient = Depends(get_database),
 ):
     # check whether marketer exists or not and return his name
-    query_result = brokerage.marketers.find_one({"IdpId": user.get("sub")})
+    marketers_coll = brokerage[setting.MARKETERS_COLLECTION]
+    query_result = marketers_coll.find_one({"MarketerID": user.get("sub")})
 
     if query_result is None:
         return HTTPException(status_code=401, detail="Unauthorized User")
 
-    marketer_fullname = get_marketer_name(query_result)
+    marketer_fullname = query_result["TbsReagentName"]#get_marketer_name(query_result)
 
     pipeline = [
         {"$match": {"$and": [{"Referer": marketer_fullname}]}},
