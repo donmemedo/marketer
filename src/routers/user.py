@@ -26,7 +26,7 @@ async def get_user_profile(
     if query_result is None:
         return HTTPException(status_code=401, detail="Unauthorized User")
 
-    marketer_fullname = get_marketer_name(query_result)
+    marketer_fullname = query_result["TbsReagentName"]#get_marketer_name(query_result)
 
     pipeline = [
         {"$match": {"$and": [{"Referer": marketer_fullname}]}},

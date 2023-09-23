@@ -52,7 +52,9 @@ async def cal_marketer_cost(
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Unauthorized user")
 
     # query = {"Referer": {"$regex": marketer_dict.get("FirstName")}}
-    marketer_fullname = get_marketer_name(marketer_dict)
+    # marketer_fullname = get_marketer_name(marketer_dict)
+    marketer_fullname = marketer_dict['TbsReagentName']
+
     query = {"Referer": marketer_fullname}
 
     fields = {"PAMCode": 1}
@@ -250,18 +252,33 @@ async def factor_print(
 ):
     factors_coll = brokerage[setting.FACTORS_COLLECTION]
     marketer = factors_coll.find_one({"$and":[{"MarketerID": user.get("sub")},{"Period":args.Period}]})
-    result = {
-        "TotalTurnOver": marketer["TotalTurnOver"],
-        "TotalBrokerCommission": marketer["TotalBrokerCommission"],
-        "TotalNetBrokerCommission": marketer["TotalNetBrokerCommission"],
-        "MarketerCommissionIncome": marketer["MarketerCommissionIncome"],
-        "TotalFeeOfFollowers": marketer["TotalFeeOfFollowers"],
-        "CollateralOfThisMonth": marketer["CollateralOfThisMonth"],
-        "SumOfDeductions": marketer["SumOfDeductions"],
-        "Payment": marketer["Payment"],
-    }
+    try:
+        result = {
+            "TotalTurnOver": marketer["TotalTurnOver"],
+            "TotalBrokerCommission": marketer["TotalBrokerCommission"],
+            "TotalNetBrokerCommission": marketer["TotalNetBrokerCommission"],
+            "MarketerCommissionIncome": marketer["MarketerCommissionIncome"],
+            "TotalFeeOfFollowers": marketer["TotalFeeOfFollowers"],
+            "CollateralOfThisMonth": marketer["CollateralOfThisMonth"],
+            "SumOfDeductions": marketer["SumOfDeductions"],
+            "Payment": marketer["Payment"],
+        }
 
-    return ResponseOut(timeGenerated=datetime.now(), result=result, error="")
+        return ResponseOut(timeGenerated=datetime.now(), result=result, error="")
+    except:
+        return JSONResponse(
+            status_code=status.HTTP_404_NOT_FOUND,
+            content=jsonable_encoder(
+                ErrorOut(
+                    error=errors.get("MARKETER_FACTORS_NOT_FOUND"),
+                    timeGenerated=datetime.now(),
+                    result={}
+                )
+            )
+        )
+
+        return ResponseOut(timeGenerated=datetime.now(), result=result, error="")
+        raise RequestValidationError(TypeError, body={"code": "30001", "status": 404})
 
 
 @plan_router.get("/marketer-total", response_model=None)
@@ -284,7 +301,8 @@ async def get_marketer_total_trades(
                 )
             )
         )
-    marketer_fullname = get_marketer_name(query_result)
+    marketer_fullname = query_result["TbsReagentName"]# get_marketer_name(query_result)
+
     query = {"Referer": {"$regex": marketer_fullname}}
     trade_codes = brokerage.customers.distinct("PAMCode", query)
     from_gregorian_date = args.from_date
@@ -298,7 +316,7 @@ async def get_marketer_total_trades(
         project_pure_stage()
     ]
 
-    result = next(brokerage.trades.aggregate(pipeline=pipeline), [])
+    result = next(brokerage.trades.aggregate(pipeline=pipeline), {})
     followers = dict(enumerate(brokerage.mrelations.find({"LeaderMarketerID": user.get("sub")},{"_id":0})))
     FTF = 0
     for i in followers:

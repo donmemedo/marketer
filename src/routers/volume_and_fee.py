@@ -92,7 +92,7 @@ async def get_marketer_total_trades(
             )
         )
 
-    marketer_fullname = get_marketer_name(query_result)
+    marketer_fullname = query_result["TbsReagentName"]#get_marketer_name(query_result)
 
     # Get all customers
     # query = {"Referer": {"$regex": marketer_fullname}}
@@ -171,7 +171,7 @@ async def users_list_by_volume(
             )
         )
 
-    marketer_fullname = get_marketer_name(query_result)
+    marketer_fullname = query_result["TbsReagentName"]#get_marketer_name(query_result)
     from_gregorian_date = args.from_date
     to_gregorian_date = (datetime.strptime(args.to_date, "%Y-%m-%d") + timedelta(days=1)).strftime("%Y-%m-%d")
     # query = {"Referer": {"$regex": marketer_fullname}}
