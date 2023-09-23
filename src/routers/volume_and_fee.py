@@ -14,6 +14,7 @@ from src.tools.database import get_database
 from src.tools.messages import errors
 from src.tools.queries import *
 from src.tools.utils import get_marketer_name, to_gregorian_
+from src.tools.config import setting
 
 volume_and_fee_router = APIRouter(prefix="/volume-and-fee", tags=["Volume and Fee"])
 
@@ -26,7 +27,8 @@ async def get_user_total_trades(
         brokerage: MongoClient = Depends(get_database),
 ) -> JSONResponse:
     # check if marketer exists and return his name
-    query_result = brokerage.marketers.find_one({"IdpId": user.get("sub")})
+    marketers_coll = brokerage[setting.MARKETERS_COLLECTION]
+    query_result = marketers_coll.find_one({"MarketerID": user.get("sub")})
 
     if query_result is None:
         return JSONResponse(
@@ -75,7 +77,8 @@ async def get_marketer_total_trades(
         brokerage: MongoClient = Depends(get_database),
 ) -> JSONResponse:
     # check if marketer exists and return his name
-    query_result = brokerage.marketers.find_one({"IdpId": user.get("sub")})
+    marketers_coll = brokerage[setting.MARKETERS_COLLECTION]
+    query_result = marketers_coll.find_one({"MarketerID": user.get("sub")})
 
     if query_result is None:
         return JSONResponse(
@@ -153,7 +156,8 @@ async def users_list_by_volume(
             },
         }
         return JSONResponse(status_code=412, content=resp)
-    query_result = brokerage.marketers.find_one({"IdpId": user.get("sub")})
+    marketers_coll = brokerage[setting.MARKETERS_COLLECTION]
+    query_result = marketers_coll.find_one({"MarketerID": user.get("sub")})
 
     if query_result is None:
         return JSONResponse(

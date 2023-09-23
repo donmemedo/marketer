@@ -25,7 +25,8 @@ async def get_marketer_profile(
         user: dict = Depends(get_current_user),
         brokerage: MongoClient = Depends(get_database),
 ):
-    result = brokerage.marketers.find_one({"IdpId": user.get("sub")}, {"_id": 0})
+    marketers_coll = brokerage[setting.MARKETERS_COLLECTION]
+    result = marketers_coll.find_one({"MarketerID": user.get("sub")}, {"_id": 0})
 
     if result is None:
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Unauthorized user")
@@ -44,7 +45,8 @@ async def cal_marketer_cost(
         brokerage: MongoClient = Depends(get_database)
 ):
     # check if marketer exists and return his name
-    marketer_dict = brokerage.marketers.find_one({"IdpId": user.get("sub")}, {"_id": 0})
+    marketers_coll = brokerage[setting.MARKETERS_COLLECTION]
+    marketer_dict = marketers_coll.find_one({"MarketerID": user.get("sub")}, {"_id": 0})
 
     if marketer_dict is None:
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Unauthorized user")
@@ -269,7 +271,8 @@ async def get_marketer_total_trades(
         args: MarketerTotalIn = Depends(MarketerTotalIn),
         brokerage: MongoClient = Depends(get_database),
 ) -> JSONResponse:
-    query_result = brokerage.marketers.find_one({"IdpId": user.get("sub")})
+    marketers_coll = brokerage[setting.MARKETERS_COLLECTION]
+    query_result = marketers_coll.find_one({"MarketerID": user.get("sub")})
     if query_result is None:
         return JSONResponse(
             status_code=status.HTTP_403_FORBIDDEN,
