@@ -1,17 +1,19 @@
 from datetime import datetime, timedelta
 
+import pymongo
 from fastapi import APIRouter, Depends, HTTPException, status
 from fastapi.responses import JSONResponse
 from fastapi.encoders import jsonable_encoder
 from khayyam import JalaliDatetime as jd
 from pymongo import MongoClient
 from src.tools.messages import errors
-from src.tools.config import setting
+
 from src.auth.authentication import get_current_user
 from src.auth.authorization import authorize
-from src.schemas.schemas import CostIn, FactorIn, ResponseOut, MarketerTotalIn, ErrorOut
+from src.schemas.schemas import *
 from src.tools.database import get_database
 from src.tools.utils import peek, to_gregorian_, get_marketer_name
+from src.tools.config import *
 from src.tools.queries import *
 
 plan_router = APIRouter(prefix="/marketer", tags=["Marketer"])
@@ -23,9 +25,8 @@ async def get_marketer_profile(
         user: dict = Depends(get_current_user),
         brokerage: MongoClient = Depends(get_database),
 ):
-    # result = brokerage.marketers.find_one({"IdpId": user.get("sub")}, {"_id": 0})
-    marketers_col = brokerage[setting.MARKETERS_COLLECTION]
-    result = marketers_col.find_one({"Id": user.get("sub")}, {"_id": 0})
+    marketers_coll = brokerage[setting.MARKETERS_COLLECTION]
+    result = marketers_coll.find_one({"MarketerID": user.get("sub")}, {"_id": 0})
 
     if result is None:
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Unauthorized user")
@@ -44,20 +45,17 @@ async def cal_marketer_cost(
         brokerage: MongoClient = Depends(get_database)
 ):
     # check if marketer exists and return his name
-    # marketer_dict = brokerage.marketers.find_one({"IdpId": user.get("sub")}, {"_id": 0})
-    marketers_col = brokerage[setting.MARKETERS_COLLECTION]
-    marketer_dict = marketers_col.find_one({"Id": user.get("sub")}, {"_id": 0})
+    marketers_coll = brokerage[setting.MARKETERS_COLLECTION]
+    marketer_dict = marketers_coll.find_one({"MarketerID": user.get("sub")}, {"_id": 0})
 
     if marketer_dict is None:
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Unauthorized user")
 
     # query = {"Referer": {"$regex": marketer_dict.get("FirstName")}}
     # marketer_fullname = get_marketer_name(marketer_dict)
-    # query = {"Referer": marketer_fullname}
-    try:
-        query = {"Referer": marketer_dict['TbsReagentName']}
-    except:
-        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Unauthorized user")
+    marketer_fullname = marketer_dict['TbsReagentName']
+
+    query = {"Referer": marketer_fullname}
 
     fields = {"PAMCode": 1}
 
@@ -249,31 +247,38 @@ async def cal_marketer_cost(
 @authorize(["Marketer.All"])
 async def factor_print(
         user: dict = Depends(get_current_user),
-        args: FactorIn = Depends(FactorIn),
+        args: WalletIn = Depends(WalletIn),
         brokerage: MongoClient = Depends(get_database),
 ):
     factors_coll = brokerage[setting.FACTORS_COLLECTION]
-    marketer = factors_coll.find_one({"IdpID": user.get("sub")})
-    dd = args.year + f"{int(args.month):02}"
-    cc = args.year + f"{int(args.month) - 2:02}"
-    if args.month == "1" or args.month == "01":
-        cc = str(int(args.year) - 1) + "11"
-    if args.month == "2" or args.month == "02":
-        cc = str(int(args.year) - 1) + "12"
-    two_months_ago_coll = marketer[cc + "Collateral"]
+    marketer = factors_coll.find_one({"$and":[{"MarketerID": user.get("sub")},{"Period":args.Period}]})
+    try:
+        result = {
+            "TotalTurnOver": marketer["TotalTurnOver"],
+            "TotalBrokerCommission": marketer["TotalBrokerCommission"],
+            "TotalNetBrokerCommission": marketer["TotalNetBrokerCommission"],
+            "MarketerCommissionIncome": marketer["MarketerCommissionIncome"],
+            "TotalFeeOfFollowers": marketer["TotalFeeOfFollowers"],
+            "CollateralOfThisMonth": marketer["CollateralOfThisMonth"],
+            "SumOfDeductions": marketer["SumOfDeductions"],
+            "Payment": marketer["Payment"],
+        }
 
-    result = {
-        "TotalFee": marketer[dd + "TotalFee"],
-        "TotalPureVolume": marketer[dd + "TotalPureVolume"],
-        "PureFee": marketer[dd + "PureFee"],
-        "MarketerFee": marketer[dd + "MarketerFee"],
-        "TotalFeeOfFollowers": marketer[dd + "TotalFeeOfFollowers"],
-        "Collateral": marketer[dd + "CollateralOfThisMonth"],
-        "Deductions": marketer[dd + "SumOfDeductions"],
-        "Payment": marketer[dd + "Payment"],
-    }
+        return ResponseOut(timeGenerated=datetime.now(), result=result, error="")
+    except:
+        return JSONResponse(
+            status_code=status.HTTP_404_NOT_FOUND,
+            content=jsonable_encoder(
+                ErrorOut(
+                    error=errors.get("MARKETER_FACTORS_NOT_FOUND"),
+                    timeGenerated=datetime.now(),
+                    result={}
+                )
+            )
+        )
 
-    return ResponseOut(timeGenerated=datetime.now(), result=result, error="")
+        return ResponseOut(timeGenerated=datetime.now(), result=result, error="")
+        raise RequestValidationError(TypeError, body={"code": "30001", "status": 404})
 
 
 @plan_router.get("/marketer-total", response_model=None)
@@ -283,19 +288,21 @@ async def get_marketer_total_trades(
         args: MarketerTotalIn = Depends(MarketerTotalIn),
         brokerage: MongoClient = Depends(get_database),
 ) -> JSONResponse:
-    query_result = brokerage.marketers.find_one({"IdpId": user.get("sub")})
+    marketers_coll = brokerage[setting.MARKETERS_COLLECTION]
+    query_result = marketers_coll.find_one({"MarketerID": user.get("sub")})
     if query_result is None:
         return JSONResponse(
             status_code=status.HTTP_403_FORBIDDEN,
             content=jsonable_encoder(
                 ErrorOut(
-                    error=errors.get("MARKETER_NOT_DEFINED"),
+                    error=errors.get("MARKETER_NOT_DEFINED3"),
                     timeGenerated=datetime.now(),
                     result={}
                 )
             )
         )
-    marketer_fullname = get_marketer_name(query_result)
+    marketer_fullname = query_result["TbsReagentName"]# get_marketer_name(query_result)
+
     query = {"Referer": {"$regex": marketer_fullname}}
     trade_codes = brokerage.customers.distinct("PAMCode", query)
     from_gregorian_date = args.from_date
@@ -309,7 +316,7 @@ async def get_marketer_total_trades(
         project_pure_stage()
     ]
 
-    result = next(brokerage.trades.aggregate(pipeline=pipeline), [])
+    result = next(brokerage.trades.aggregate(pipeline=pipeline), {})
     followers = dict(enumerate(brokerage.mrelations.find({"LeaderMarketerID": user.get("sub")},{"_id":0})))
     FTF = 0
     for i in followers:
@@ -340,3 +347,77 @@ async def get_marketer_total_trades(
     )
 
 
+@plan_router.get("/factor/get-all", response_model=None)
+@authorize(["Marketer.All"])
+async def get_marketer_all_factors(
+        user: dict = Depends(get_current_user),
+        args: AllFactors = Depends(AllFactors),
+        brokerage: MongoClient = Depends(get_database),
+) -> JSONResponse:
+    factors_coll = brokerage[setting.FACTORS_COLLECTION]
+    if args.status:
+        filter = {
+            "$and": [
+                {"MarketerID": user.get("sub")},
+                {"Status": args.status},
+            ]
+        }
+    else:
+        filter = {"MarketerID": user.get("sub")}
+
+    query_result = factors_coll.find(filter,{"_id":False}).skip(args.page_size * args.page_index).limit(args.page_size)
+    factors = sorted(list(query_result), key=lambda d: d['Period'])#list(query_result)
+
+    total_count = factors_coll.count_documents(filter)
+    if not factors:
+        return JSONResponse(
+            status_code=status.HTTP_404_NOT_FOUND,
+            content=jsonable_encoder(
+                ErrorOut(
+                    error=errors.get("MARKETER_FACTORS_NOT_FOUND"),
+                    timeGenerated=datetime.now(),
+                    result={}
+                )
+            )
+        )
+    results = []
+    for factor in factors:
+        factor_details = {
+            "TotalTurnOver": factor["TotalTurnOver"],
+            "TotalBrokerCommission": factor["TotalBrokerCommission"],
+            "TotalNetBrokerCommission": factor["TotalNetBrokerCommission"],
+            "MarketerCommissionIncome": factor["MarketerCommissionIncome"],
+            "TotalFeeOfFollowers": factor["TotalFeeOfFollowers"],
+            "CollateralOfThisMonth": factor["CollateralOfThisMonth"],
+            "SumOfDeductions": factor["SumOfDeductions"],
+            "SumOfAdditions": factor["SumOfAdditions"],
+            "Payment": factor["Payment"],
+            "Period": factor["Period"],
+            "Status": factor["Status"],
+        }
+        # result = {
+        #     "FactorID": factor["FactorID"],
+        #     "TotalTurnOver": factor["TotalTurnOver"],
+        #     "TotalBrokerCommission": factor["TotalBrokerCommission"],
+        #     "TotalNetBrokerCommission": factor["TotalNetBrokerCommission"],
+        #     "MarketerCommissionIncome": factor["MarketerCommissionIncome"],
+        #     "TotalFeeOfFollowers": factor["TotalFeeOfFollowers"],
+        #     "CollateralOfThisMonth": factor["CollateralOfThisMonth"],
+        #     "SumOfDeductions": factor["SumOfDeductions"],
+        #     "SumOfAdditions": factor["SumOfAdditions"],
+        #     "Payment": factor["Payment"],
+        #     "Period": factor["Period"],
+        #     "Status": factor["Status"],
+        # }
+        result = {factor["ID"]:factor_details}
+        results.append(result)
+    resp = {
+        "pagedData": results,
+        "timeGenerated": jd.now().strftime("%Y-%m-%dT%H:%M:%S.%f"),
+        "error": {
+            "message": "Null",
+            "code": "Null",
+        },
+        "totalCount": total_count
+    }
+    return JSONResponse(status_code=200, content=resp)

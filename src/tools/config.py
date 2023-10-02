@@ -2,18 +2,16 @@ from pydantic import BaseSettings
 
 
 class Settings(BaseSettings):
-    VERSION = "1.1.0"
-    MONGO_CONNECTION_STRING = "mongodb://root:1qaz1qaz@localhost:27017/"
+    VERSION = "0.0.1"
+    MONGO_CONNECTION_STRING = "mongodb://root:root@172.24.65.105:30001/"
     MONGO_DATABASE = "brokerage"
-    MARKETERS_COLLECTION = "marketers"
-    CUSTOMERS_COLLECTION = "customers"
-    FACTORS_COLLECTION = "factors"
-    TRADES_COLLECTION = "trades"
     SWAGGER_TITLE = "Marketer API"
     SPLUNK_HOST = "172.24.65.206"
     SPLUNK_PORT = 5141
     FASTAPI_DOCS = "/docs"
     FASTAPI_REDOC = "/redoc"
+    FACTORS_COLLECTION = "MarketerFactor"
+    MARKETERS_COLLECTION = "MarketerTable"
     ORIGINS = "*"
     TOKEN_URL = "https://cluster.tech1a.co/connect/token"
     CLIENT_ID = "M2M.RegisterServicePermission"
