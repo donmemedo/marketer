@@ -75,7 +75,7 @@ def verify_token(token: str, public_key: str) -> dict | JSONResponse:
             status_code=status.HTTP_403_FORBIDDEN,
             content=jsonable_encoder(
                 ErrorOut(
-                    error=errors.get("MARKETER_NOT_DEFINED"),
+                    error=errors.get("MARKETER_NOT_DEFINED1"),
                     timeGenerated=datetime.now(),
                     result={}
                 )

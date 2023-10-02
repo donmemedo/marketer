@@ -25,7 +25,7 @@ def authorize(permissions):
                     status_code=status.HTTP_403_FORBIDDEN,
                     content=jsonable_encoder(
                         ErrorOut(
-                            error=errors.get("MARKETER_NOT_DEFINED"),
+                            error=errors.get("MARKETER_NOT_DEFINED2"),
                             timeGenerated=datetime.now(),
                             result={}
                         )
