@@ -10,7 +10,7 @@ RUN pip install -r requirements.txt
 
 ENV PYTHONPATH="$PYTHONPATH:/app"
 
-EXPOSE 8000
+EXPOSE 80
 
 WORKDIR /app/src
 
