@@ -1,4 +1,4 @@
-FROM registry.tech1a.co:81/repository/tech1a-docker-registry/python/python:3.10
+FROM python:3.13.6-slim
 
 ENV TZ=Asia/Tehran
 
